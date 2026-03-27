@@ -1,0 +1,255 @@
+﻿// Copyright (c) 2019 AlphaSierraPapa for the SharpDevelop Team
+// .
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this
+// software and associated documentation files (the "Software"), to deal in the Software
+// without restriction, including without limitation the rights to use, copy, modify, merge,
+// publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, subject to the following conditions:
+// .
+// The above copyright notice and this permission notice shall be included in all copies or
+// substantial portions of the Software.
+// .
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+// PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+// FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Text;
+using System.Windows;
+using System.Windows.Data;
+using System.Windows.Markup;
+
+namespace ICSharpCode.WpfDesign.XamlDom;
+
+/// <summary>
+/// 一个静态类，可以为标记扩展（Markup Extension）生成其在XAML中的文本表示形式（例如 "{Binding Path=...}"）.
+/// </summary>
+public static class MarkupExtensionPrinter
+{
+    /// <summary>
+    /// 获取一个值，该值指示是否可以为指定的XamlObject生成简写的标记扩展字符串.
+    /// </summary>
+    /// <param name="obj">要检查的XamlObject.</param>
+    /// <returns>如果可以生成标记扩展字符串，则为true；否则为false.</returns>
+    public static bool CanPrint(XamlObject obj)
+    {
+        // MultiBinding 和 PriorityBinding 不支持简写的标记扩展语法.
+        if (obj.ElementType == typeof(MultiBinding) ||
+            obj.ElementType == typeof(PriorityBinding))
+        {
+            return false;
+        }
+
+        // 调用私有辅助方法进行更深入的检查.
+        return CanPrint(obj, false, GetNonMarkupExtensionParent(obj));
+    }
+
+    /// <summary>
+    /// 为指定的XamlObject生成XAML标记扩展字符串.
+    /// </summary>
+    /// <param name="obj">要打印的XamlObject.</param>
+    /// <returns>表示该对象的标记扩展字符串.</returns>
+    public static string Print(XamlObject obj)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        // 标记扩展以 '{' 开始.
+        sb.Append('{');
+
+        // 附加标记扩展的名称 (例如 "Binding", "StaticResource").
+        sb.Append(obj.GetNameForMarkupExtension());
+        bool first = true;
+        var properties = obj.Properties.ToList();
+
+        // 为了一些常见的标记扩展，它们的默认属性可以省略属性名（简写语法）.
+        if (obj.ElementType == typeof(Binding))
+        {
+            var p = obj.Properties.FirstOrDefault(x => x.PropertyName == "Path");
+            if (p != null && p.IsSet)
+            {
+                sb.Append(' ');
+                AppendPropertyValue(sb, p.PropertyValue, false);
+                properties.Remove(p);
+                first = false;
+            }
+        }
+        else if (obj.ElementType == typeof(Reference))
+        {
+            var p = obj.Properties.FirstOrDefault(x => x.PropertyName == "Name");
+            if (p != null && p.IsSet)
+            {
+                sb.Append(' ');
+                AppendPropertyValue(sb, p.PropertyValue, false);
+                properties.Remove(p);
+                first = false;
+            }
+        }
+        else if (obj.ElementType == typeof(StaticResourceExtension))
+        {
+            var p = obj.Properties.FirstOrDefault(x => x.PropertyName == "ResourceKey");
+            if (p != null && p.IsSet)
+            {
+                sb.Append(' ');
+                AppendPropertyValue(sb, p.PropertyValue, false);
+                properties.Remove(p);
+                first = false;
+            }
+        }
+
+        // 遍历所有剩余的已设置属性.
+        foreach (var property in properties)
+        {
+            if (!property.IsSet)
+            {
+                continue;
+            }
+
+            // 在属性之间添加分隔符.
+            if (first)
+            {
+                sb.Append(' ');
+            }
+            else
+            {
+                sb.Append(", ");
+            }
+
+            first = false;
+
+            // 附加 "PropertyName=" .
+            sb.Append(property.GetNameForMarkupExtension());
+            sb.Append('=');
+
+            // 附加属性的值.
+            AppendPropertyValue(sb, property.PropertyValue, property.ReturnType == typeof(string));
+        }
+
+        // 标记扩展以 '}' 结束.
+        sb.Append('}');
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// 将属性值（作为文本或嵌套的标记扩展）附加到字符串构建器中.
+    /// </summary>
+    private static void AppendPropertyValue(StringBuilder sb, XamlPropertyValue value, bool isStringProperty)
+    {
+        var textValue = value as XamlTextValue;
+        if (textValue != null)
+        {
+            // 处理文本值.
+            string text = textValue.Text;
+            bool containsSpace = text.Contains(' ');
+
+            // 如果文本包含空格，则需要用单引号包裹.
+            if (containsSpace)
+            {
+                sb.Append('\'');
+            }
+
+            // 根据XAML规范，对特殊字符进行转义.
+            if (isStringProperty)
+            {
+                // 如果属性本身是字符串类型，还需要对花括号进行转义.
+                sb.Append(text.Replace("\\", "\\\\").Replace("{", "\\{").Replace("}", "\\}"));
+            }
+            else
+            {
+                sb.Append(text.Replace("\\", "\\\\"));
+            }
+
+            if (containsSpace)
+            {
+                sb.Append('\'');
+            }
+        }
+        else if (value is XamlObject tempValue)
+        {
+            // 如果值是另一个标记扩展，则递归调用Print方法.
+            sb.Append(Print(tempValue));
+        }
+    }
+
+    /// <summary>
+    /// CanPrint方法的私有递归实现.
+    /// </summary>
+    private static bool CanPrint(XamlObject obj, bool isNested, XamlObject? nonMarkupExtensionParent)
+    {
+        // 这是一个特殊情况的检查：如果一个StaticResource引用了在同一个非标记扩展父对象上定义的本地资源，
+        // 那么它不能被打印为字符串形式，否则资源查找会失败。它必须被写成属性元素语法.
+        if ((isNested || obj.ParentObject == nonMarkupExtensionParent) && IsStaticResourceThatReferencesLocalResource(obj, nonMarkupExtensionParent))
+        {
+            return false;
+        }
+
+        // 遍历所有属性，检查它们的值.
+        foreach (var property in obj.Properties.Where((prop) => prop.IsSet))
+        {
+            var value = property.PropertyValue;
+            if (value is XamlTextValue)
+            {
+                // 文本值是允许的.
+                continue;
+            }
+
+            var xamlObject = value as XamlObject;
+            // 属性值必须是文本或者另一个可以被打印为标记扩展的XamlObject.
+            if (xamlObject == null || !xamlObject.IsMarkupExtension)
+            {
+                return false;
+            }
+            else if (!CanPrint(xamlObject, true, nonMarkupExtensionParent))
+            {
+                // 递归检查嵌套的标记扩展.
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 从一个标记扩展对象开始，向上遍历DOM树，找到第一个不是标记扩展的父级对象.
+    /// </summary>
+    private static XamlObject? GetNonMarkupExtensionParent(XamlObject? markupExtensionObject)
+    {
+        Debug.Assert(markupExtensionObject.IsMarkupExtension);
+
+        XamlObject obj = markupExtensionObject;
+        while (obj != null && obj.IsMarkupExtension)
+        {
+            obj = obj.ParentObject;
+        }
+
+        return obj;
+    }
+
+    /// <summary>
+    /// 检查一个StaticResource是否引用了在同一个对象上定义的本地资源.
+    /// </summary>
+    private static bool IsStaticResourceThatReferencesLocalResource(XamlObject obj, XamlObject? nonMarkupExtensionParent)
+    {
+        var staticResource = obj.Instance as System.Windows.StaticResourceExtension;
+        if (staticResource != null && staticResource.ResourceKey != null && nonMarkupExtensionParent != null)
+        {
+            // 在非标记扩展父级上查找具有相同键的本地资源.
+            var parentLocalResource = nonMarkupExtensionParent.ServiceProvider.Resolver.FindLocalResource(staticResource.ResourceKey);
+
+            // 如果在与StaticResource使用位置相同的对象上声明了具有指定键的资源，
+            // 则标记扩展必须打印为元素才能找到该资源，否则它将从父级的父级开始搜索，
+            // 可能会找不到或找到另一个同名资源.
+            if (parentLocalResource != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}

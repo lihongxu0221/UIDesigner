@@ -1,0 +1,94 @@
+﻿// Copyright (c) 2019 AlphaSierraPapa for the SharpDevelop Team
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this
+// software and associated documentation files (the "Software"), to deal in the Software
+// without restriction, including without limitation the rights to use, copy, modify, merge,
+// publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all copies or
+// substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+// PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+// FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+
+namespace ICSharpCode.WpfDesign;
+
+/// <summary>
+/// 定义大纲视图（Outline View）节点的接口.
+/// 该接口用于在设计器的大纲树结构中表示和操作设计项（DesignItem）的层次结构.
+/// </summary>
+public interface IOutlineNode
+{
+    /// <summary>
+    /// Gets 用于管理当前设计器选定状态的选择服务.
+    /// </summary>
+    ISelectionService SelectionService { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 此节点在大纲树视图中是否处于展开状态.
+    /// </summary>
+    bool IsExpanded { get; set; }
+
+    /// <summary>
+    /// Gets or sets 此大纲节点所关联的底层设计项（DesignItem）.
+    /// </summary>
+    DesignItem DesignItem { get; set; }
+
+    /// <summary>
+    /// Gets 设计器环境提供的服务容器，用于访问全局设计时服务.
+    /// </summary>
+    ServiceContainer Services { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 此节点当前在大纲视图中是否已被选中.
+    /// </summary>
+    bool IsSelected { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 关联的设计项在设计器画布上是否可见.
+    /// </summary>
+    bool IsDesignTimeVisible { get; set; }
+
+    /// <summary>
+    /// Gets a value indicating whether 关联的设计项在设计时是否已被锁定（禁止移动或编辑）.
+    /// </summary>
+    bool IsDesignTimeLocked { get; }
+
+    /// <summary>
+    /// Gets 节点在大纲视图中显示的名称.
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
+    /// Gets 当前节点的子节点集合.
+    /// </summary>
+    /// <value>
+    /// 包含所有子大纲节点的 <see cref="ObservableCollection{IOutlineNode}"/>.
+    /// </value>
+    ObservableCollection<IOutlineNode> Children { get; }
+
+    /// <summary>
+    /// 确定是否可以将指定的节点集合插入到当前节点的子节点列表中.
+    /// </summary>
+    /// <param name="nodes">要尝试插入的节点集合.</param>
+    /// <param name="after">插入位置之后的参考节点.如果为 <see langword="null"/>，则通常插入到子节点列表的起始或末尾.</param>
+    /// <param name="copy">如果为 <see langword="true"/>，则表示执行副本插入（复制）；如果为 <see langword="false"/>，则表示执行移动操作.</param>
+    /// <returns>如果允许执行插入操作，则返回 <see langword="true"/>；否则返回 <see langword="false"/>.</returns>
+    bool CanInsert(IEnumerable<IOutlineNode> nodes, IOutlineNode after, bool copy);
+
+    /// <summary>
+    /// 将指定的节点集合插入到当前节点的子节点列表中.
+    /// </summary>
+    /// <param name="nodes">要插入的节点集合.</param>
+    /// <param name="after">插入位置之后的参考节点.如果为 <see langword="null"/>，则插入到子节点列表的末尾.</param>
+    /// <param name="copy">如果为 <see langword="true"/>，则执行复制操作；否则执行移动操作.</param>
+    void Insert(IEnumerable<IOutlineNode> nodes, IOutlineNode after, bool copy);
+}

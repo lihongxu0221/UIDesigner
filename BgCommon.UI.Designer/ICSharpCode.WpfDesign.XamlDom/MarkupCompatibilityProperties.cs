@@ -1,0 +1,52 @@
+﻿// Copyright (c) 2019 AlphaSierraPapa for the SharpDevelop Team
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this
+// software and associated documentation files (the "Software"), to deal in the Software
+// without restriction, including without limitation the rights to use, copy, modify, merge,
+// publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons
+// to whom the Software is furnished to do so, subject to the following conditions:
+// .
+// The above copyright notice and this permission notice shall be included in all copies or
+// substantial portions of the Software.
+// .
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+// INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+// PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
+// FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+// DEALINGS IN THE SOFTWARE.
+
+using System.Windows;
+
+namespace ICSharpCode.WpfDesign.XamlDom;
+
+/// <summary>
+/// 为 Visual Studio 和 Blend 使用的标记兼容性属性（通常对应XAML中的"mc:"前缀）提供支持的辅助类.
+/// </summary>
+public class MarkupCompatibilityProperties : FrameworkElement
+{
+    /// <summary>
+    /// 表示一个附加属性，该属性定义了在XAML处理过程中可以被忽略的命名空间前缀.
+    /// </summary>
+    public static readonly DependencyProperty IgnorableProperty = DependencyProperty.RegisterAttached("Ignorable", typeof(string), typeof(MarkupCompatibilityProperties));
+
+    /// <summary>
+    /// 获取 <see cref="IgnorableProperty"/> 附加属性的值.
+    /// </summary>
+    /// <param name="obj">要获取属性值的依赖对象.</param>
+    /// <returns>可忽略的命名空间前缀字符串.</returns>
+    public static string GetIgnorable(DependencyObject obj)
+    {
+        return (string)obj.GetValue(IgnorableProperty);
+    }
+
+    /// <summary>
+    /// 设置 <see cref="IgnorableProperty"/> 附加属性的值.
+    /// </summary>
+    /// <param name="obj">要设置属性值的依赖对象.</param>
+    /// <param name="value">要设置的值.</param>
+    public static void SetIgnorable(DependencyObject obj, string value)
+    {
+        obj.SetValue(IgnorableProperty, value);
+    }
+}
