@@ -1,0 +1,1 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Attributes;/// <summary>/// Specifies that a font family selector should be used./// </summary>[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = true, AllowMultiple = false)]public class FontFamilySelectorAttribute : Attribute{}

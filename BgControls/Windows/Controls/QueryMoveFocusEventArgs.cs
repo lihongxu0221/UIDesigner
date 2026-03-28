@@ -1,0 +1,44 @@
+namespace BgControls.Windows.Controls;
+
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1003:UseGenericEventHandlerInstances")]
+public delegate void QueryMoveFocusEventHandler(object sender, QueryMoveFocusEventArgs e);
+
+/// <summary>
+/// Provides information on the focus navigation.
+/// </summary>
+public class QueryMoveFocusEventArgs : RoutedEventArgs
+{
+    private readonly FocusNavigationDirection navigationDirection;
+    private readonly bool reachedMaxLength;
+    private bool canMove = true;
+
+    private QueryMoveFocusEventArgs()
+    {
+    }
+
+    internal QueryMoveFocusEventArgs(FocusNavigationDirection direction, bool reachedMaxLength)
+        : base(AutoSelectTextBox.QueryMoveFocusEvent)
+    {
+        this.navigationDirection = direction;
+        this.reachedMaxLength = reachedMaxLength;
+    }
+
+    /// <summary>
+    /// Gets a value indicating the direction in which the focus is attempting to navigate.
+    /// </summary>
+    public FocusNavigationDirection FocusNavigationDirection => navigationDirection;
+
+    /// <summary>
+    /// Gets a value indicating whether if the maximum allowed length of text has been reached.
+    /// </summary>
+    public bool ReachedMaxLength => reachedMaxLength;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether if the focus can move.
+    /// </summary>
+    public bool CanMoveFocus
+    {
+        get { return canMove; }
+        set { canMove = value; }
+    }
+}

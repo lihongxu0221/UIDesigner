@@ -1,0 +1,1084 @@
+using BgControls.Windows.Automation.Peers;
+using BgControls.Windows.Primitives;
+using System.Windows.Automation.Peers;
+
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+///   <para>The TimeSpanUpDown class represents a control that lets you increment or decrement a time value over 24 hours. The Format is Days.Hours:Minutes:Seconds.</para>
+///   <para></para>
+///   <para>This class derives from UpDownBase, which is an abstract class that is now the base class for DateTimeUpDown and TimeSpanUpDown. It contains their common
+/// methods and properties.</para>
+/// </summary>
+public class TimeSpanUpDown : DateTimeUpDownBase<TimeSpan?>
+{
+    private static readonly int HoursInDay = 24;
+    private static readonly int MinutesInDay = 1440;
+    private static readonly int MinutesInHour = 60;
+    private static readonly int SecondsInDay = 86400;
+    private static readonly int SecondsInHour = 3600;
+    private static readonly int SecondsInMinute = 60;
+    private static readonly int MilliSecondsInDay = TimeSpanUpDown.SecondsInDay * 1000;
+    private static readonly int MilliSecondsInHour = TimeSpanUpDown.SecondsInHour * 1000;
+    private static readonly int MilliSecondsInMinute = TimeSpanUpDown.SecondsInMinute * 1000;
+    private static readonly int MilliSecondsInSecond = 1000;
+
+    /// <summary>
+    /// Identifies the FractionalSecondsDigitsCount dependency property.
+    /// </summary>
+    public static readonly DependencyProperty FractionalSecondsDigitsCountProperty =
+        DependencyProperty.Register("FractionalSecondsDigitsCount", typeof(int), typeof(TimeSpanUpDown), new UIPropertyMetadata(0, OnFractionalSecondsDigitsCountChanged, OnCoerceFractionalSecondsDigitsCount));
+
+    /// <summary>
+    ///   <div>
+    ///     Identifies the ShowDays dependency property.
+    /// </div>
+    /// </summary>
+    public static readonly DependencyProperty ShowDaysProperty =
+        DependencyProperty.Register("ShowDays", typeof(bool), typeof(TimeSpanUpDown), new UIPropertyMetadata(true, OnShowDaysChanged));
+
+    /// <summary>
+    ///   <div>
+    ///     Identifies the ShowHours dependency property.
+    /// </div>
+    /// </summary>
+    public static readonly DependencyProperty ShowHoursProperty =
+        DependencyProperty.Register("ShowHours", typeof(bool), typeof(TimeSpanUpDown), new UIPropertyMetadata(true, OnShowHoursChanged));
+
+    /// <summary>
+    ///   <div>
+    ///     Identifies the ShowSeconds dependency property.
+    /// </div>
+    /// </summary>
+    public static readonly DependencyProperty ShowSecondsProperty =
+        DependencyProperty.Register("ShowSeconds", typeof(bool), typeof(TimeSpanUpDown), new UIPropertyMetadata(true, OnShowSecondsChanged));
+
+    static TimeSpanUpDown()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(TimeSpanUpDown), new FrameworkPropertyMetadata(typeof(TimeSpanUpDown)));
+        MaximumProperty.OverrideMetadata(typeof(TimeSpanUpDown), new FrameworkPropertyMetadata(TimeSpan.MaxValue));
+        MinimumProperty.OverrideMetadata(typeof(TimeSpanUpDown), new FrameworkPropertyMetadata(TimeSpan.MinValue));
+        DefaultValueProperty.OverrideMetadata(typeof(TimeSpanUpDown), new FrameworkPropertyMetadata(TimeSpan.Zero));
+    }
+
+    private int _defaultFractionalSecondsDigitsCount = 3;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TimeSpanUpDown"/> class.
+    /// </summary>
+    public TimeSpanUpDown()
+    {
+        DataObject.AddPastingHandler(this, OnPasting);
+    }
+
+    /// <summary>
+    /// Gets or sets the number of digits to use to represent the fractions of seconds in the TimeSpan.
+    /// </summary>
+    public int FractionalSecondsDigitsCount
+    {
+        get { return (int)GetValue(FractionalSecondsDigitsCountProperty); }
+        set { SetValue(FractionalSecondsDigitsCountProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether if the days will be displayed.
+    /// </summary>
+    public bool ShowDays
+    {
+        get { return (bool)GetValue(ShowDaysProperty); }
+        set { SetValue(ShowDaysProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether if the hours will be displayed. When set to <em>true</em>, the TimeSpanUpDown control will display the hours; when set to <em>false</em>, thehours are hidden.
+    /// </summary>
+    public bool ShowHours
+    {
+        get { return (bool)GetValue(ShowHoursProperty); }
+        set { SetValue(ShowHoursProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether if the seconds will be displayed.
+    /// </summary>
+    public bool ShowSeconds
+    {
+        get { return (bool)GetValue(ShowSecondsProperty); }
+        set { SetValue(ShowSecondsProperty, value); }
+    }
+
+    private static object OnCoerceFractionalSecondsDigitsCount(DependencyObject o, object value)
+    {
+        if (o is TimeSpanUpDown)
+        {
+            int num = (int)value;
+            if (num < 0 || num > 3)
+            {
+                throw new ArgumentException("Fractional seconds digits count must be between 0 and 3.");
+            }
+        }
+
+        return value;
+    }
+
+    private static void OnFractionalSecondsDigitsCountChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        var timeSpanUpDown = o as TimeSpanUpDown;
+        if (timeSpanUpDown != null)
+        {
+            timeSpanUpDown.OnFractionalSecondsDigitsCountChanged((int)e.OldValue, (int)e.NewValue);
+        }
+    }
+
+    protected virtual void OnFractionalSecondsDigitsCountChanged(int oldValue, int newValue)
+    {
+        this.UpdateValue();
+    }
+
+    private static void OnShowDaysChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        var timeSpanUpDown = o as TimeSpanUpDown;
+        if (timeSpanUpDown != null)
+        {
+            timeSpanUpDown.OnShowDaysChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+    }
+
+    protected virtual void OnShowDaysChanged(bool oldValue, bool newValue)
+    {
+        this.UpdateValue();
+    }
+
+    private static void OnShowHoursChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        var timeSpanUpDown = o as TimeSpanUpDown;
+        if (timeSpanUpDown != null)
+        {
+            timeSpanUpDown.OnShowHoursChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+    }
+
+    protected virtual void OnShowHoursChanged(bool oldValue, bool newValue)
+    {
+        this.UpdateValue();
+    }
+
+    private static void OnShowSecondsChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        var timeSpanUpDown = o as TimeSpanUpDown;
+        if (timeSpanUpDown != null)
+        {
+            timeSpanUpDown.OnShowSecondsChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+    }
+
+    protected virtual void OnShowSecondsChanged(bool oldValue, bool newValue)
+    {
+        this.UpdateValue();
+    }
+
+    /// <inheritdoc/>
+    public override bool CommitInput()
+    {
+        var sync = this.SyncTextAndValueProperties(true, Text);
+        if (this.UpdateValueOnEnterKey && this.SelectedDateTimeInfo != null && this.DateTimeInfoList != null)
+        {
+            var dateTimeInfo = this.DateTimeInfoList.FirstOrDefault(x => x.Type == this.SelectedDateTimeInfo.Type && x.Type != DateTimePart.Other);
+            this.SelectedDateTimeInfo = (dateTimeInfo != null) ? dateTimeInfo : this.DateTimeInfoList.FirstOrDefault(x => x.Type != DateTimePart.Other);
+            if (this.SelectedDateTimeInfo != null)
+            {
+                this.FireSelectionChangedEvent = false;
+                this.TextBox?.Select(this.SelectedDateTimeInfo.StartPosition, this.SelectedDateTimeInfo.Length);
+                this.FireSelectionChangedEvent = true;
+            }
+        }
+
+        return sync;
+    }
+
+    /// <inheritdoc/>
+    protected override void OnCultureInfoChanged(CultureInfo oldValue, CultureInfo newValue)
+    {
+        TimeSpan? value = (!this.UpdateValueOnEnterKey) ?
+            this.Value :
+            ((this.TextBox != null) ?
+                ConvertTextToValue(this.TextBox.Text) :
+                null);
+        InitializeDateTimeInfoList(value);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnCurrentDateTimePartChanged(DateTimePart oldValue, DateTimePart newValue)
+    {
+        if (this.CurrentDateTimePart == DateTimePart.Millisecond && FractionalSecondsDigitsCount < 3)
+        {
+            this.SetCurrentValue(FractionalSecondsDigitsCountProperty, _defaultFractionalSecondsDigitsCount);
+        }
+
+        base.OnCurrentDateTimePartChanged(oldValue, newValue);
+    }
+
+    /// <inheritdoc/>
+    protected override void SetValidSpinDirection()
+    {
+        ValidSpinDirections validSpinDirections = ValidSpinDirections.None;
+        if (!this.IsReadOnly)
+        {
+            if (this.IsLowerThan(this.Value, this.Maximum) || !this.Value.HasValue || !this.Maximum.HasValue)
+            {
+                validSpinDirections |= ValidSpinDirections.Increase;
+            }
+
+            if (this.IsGreaterThan(this.Value, this.Minimum) || !this.Value.HasValue || !this.Minimum.HasValue)
+            {
+                validSpinDirections |= ValidSpinDirections.Decrease;
+            }
+        }
+
+        if (this.Spinner != null)
+        {
+            this.Spinner.ValidSpinDirection = validSpinDirections;
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override void OnIncrement()
+    {
+        this.Increment(this.Step);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnDecrement()
+    {
+        this.Increment(-this.Step);
+    }
+
+    /// <inheritdoc/>
+    protected override string ConvertValueToText()
+    {
+        if (!this.Value.HasValue)
+        {
+            return string.Empty;
+        }
+
+        return this.ParseValueIntoTimeSpanInfo(this.Value, modifyInfo: true);
+    }
+
+    /// <inheritdoc/>
+    protected override TimeSpan? ConvertTextToValue(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            return null;
+        }
+
+        var value = TimeSpan.MinValue;
+
+        var separators = text.Where(x => x == ':' || x == '.').ToList();
+        var stringValues = text.Split(':', '.');
+        if (stringValues.Length <= 1 || stringValues.Any(x => string.IsNullOrEmpty(x)))
+        {
+            return this.ResetToLastValidValue();
+        }
+
+        var intValues = new int[stringValues.Length];
+        for (int i = 0; i < stringValues.Length; i++)
+        {
+            if (!int.TryParse(stringValues[i].Replace("-", string.Empty), out intValues[i]))
+            {
+                return ResetToLastValidValue();
+            }
+        }
+
+        if (intValues.Length >= 2)
+        {
+            bool haveMS = (separators.Count > 1) && separators.Last() == '.';
+            bool haveDays = (separators.Count > 1) && separators.First() == '.' && intValues.Length >= 3;
+            if (!ShowHours && ShowDays)
+            {
+                throw new NotSupportedException("Cannot show days when show hours is set to false.");
+            }
+
+            if (this.ShowDays)
+            {
+                int days = haveDays ? intValues[0] : (intValues[0] / 24);
+                if (days > TimeSpan.MaxValue.Days)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int hours = haveDays ? intValues[1] : (intValues[0] % 24);
+                if ((days * HoursInDay + hours) > TimeSpan.MaxValue.TotalHours)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int minutes = haveDays ? intValues[2] : intValues[1];
+                if ((days * MinutesInDay + hours * MinutesInHour + minutes) > TimeSpan.MaxValue.TotalMinutes)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int seconds = this.ShowSeconds ?
+                    ((haveDays && intValues.Length >= 4) ?
+                        intValues[3] :
+                        ((intValues.Length >= 3) ? intValues[2] : 0)) :
+                    0;
+                if ((days * SecondsInDay + hours * SecondsInHour + minutes * SecondsInMinute + seconds) > TimeSpan.MaxValue.TotalSeconds)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int milliseconds = haveMS ? intValues.Last() : 0;
+                if ((days * MilliSecondsInDay + hours * MilliSecondsInHour + minutes * MilliSecondsInMinute + seconds * MilliSecondsInSecond + milliseconds) > TimeSpan.MaxValue.TotalMilliseconds)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                value = new TimeSpan(days, hours, minutes, seconds, milliseconds);
+            }
+            else if (this.ShowHours)
+            {
+                int hours = intValues[0];
+                if (hours > TimeSpan.MaxValue.TotalHours)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int minutes = intValues[1];
+                if ((hours * MinutesInHour + minutes) > TimeSpan.MaxValue.TotalMinutes)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int seconds = (ShowSeconds && intValues.Length >= 3) ? intValues[2] : 0;
+                if ((hours * SecondsInHour + minutes * SecondsInMinute + seconds) > TimeSpan.MaxValue.TotalSeconds)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int milliseconds = (haveMS ? intValues.Last() : 0);
+                if ((hours * MilliSecondsInHour + minutes * MilliSecondsInMinute + seconds * MilliSecondsInSecond + milliseconds) > TimeSpan.MaxValue.TotalMilliseconds)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                value = new TimeSpan(0, hours, minutes, seconds, milliseconds);
+            }
+            else
+            {
+                int minutes = intValues[0];
+                if (minutes > TimeSpan.MaxValue.TotalMinutes)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int seconds = (this.ShowSeconds && intValues.Length >= 2) ? intValues[1] : 0;
+                if ((minutes * SecondsInMinute + seconds) > TimeSpan.MaxValue.TotalSeconds)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                int milliseconds = haveMS ? intValues.Last() : 0;
+                if ((double)(minutes * MilliSecondsInMinute + seconds * MilliSecondsInSecond + milliseconds) > TimeSpan.MaxValue.TotalMilliseconds)
+                {
+                    return this.ResetToLastValidValue();
+                }
+
+                value = new TimeSpan(0, 0, minutes, seconds, milliseconds);
+            }
+
+            if (text.StartsWith('-'))
+            {
+                value = value.Negate();
+            }
+        }
+
+        if (this.ClipValueToMinMax)
+        {
+            return this.GetClippedMinMaxValue(value);
+        }
+
+        this.ValidateDefaultMinMax(value);
+        return value;
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPreviewTextInput(TextCompositionEventArgs e)
+    {
+        e.Handled = !IsNumber(e.Text);
+        base.OnPreviewTextInput(e);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnPreviewKeyDown(KeyEventArgs e)
+    {
+        if (e.Key == Key.Space)
+        {
+            e.Handled = true;
+        }
+
+        base.OnPreviewKeyDown(e);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnTextChanged(string oldValue, string newValue)
+    {
+        if (!this.ProcessTextChanged)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(newValue))
+        {
+            if (!this.UpdateValueOnEnterKey)
+            {
+                this.SetCurrentValue(UpDownBase<TimeSpan?>.ValueProperty, null);
+            }
+
+            return;
+        }
+
+        if (this.Value.HasValue)
+        {
+            _ = this.Value.Value;
+        }
+
+        var separators = newValue.Where(x => x == ':' || x == '.').ToList();
+        var stringValues = newValue.Split(':', '.');
+        if (stringValues.Length < 2 || stringValues.Any(x => string.IsNullOrEmpty(x)))
+        {
+            return;
+        }
+
+        bool haveDays = separators.First() == '.' && stringValues.Length >= 3;
+        bool haveMS = separators.Count > 1 && separators.Last() == '.';
+        int[] values = new int[stringValues.Length];
+        for (int i = 0; i < stringValues.Length; i++)
+        {
+            if (!int.TryParse(stringValues[i], out values[i]))
+            {
+                return;
+            }
+        }
+
+        int days = haveDays ? Math.Abs(values[0]) : 0;
+        if (days > TimeSpan.MaxValue.Days)
+        {
+            return;
+        }
+
+        int hours = haveDays ? Math.Abs(values[1]) : Math.Abs(values[0]);
+        if (((days * HoursInDay) + hours) > TimeSpan.MaxValue.TotalHours)
+        {
+            return;
+        }
+
+        int minutes = haveDays ? Math.Abs(values[2]) : Math.Abs(values[1]);
+        if (((days * MinutesInDay) + (hours * MinutesInHour) + minutes) > TimeSpan.MaxValue.TotalMinutes)
+        {
+            return;
+        }
+
+        int seconds = (haveDays && ShowSeconds && values.Length >= 4) ? Math.Abs(values[3]) : ((ShowSeconds && values.Length >= 3) ? Math.Abs(values[2]) : 0);
+        if (((days * SecondsInDay) + (hours * SecondsInHour) + (minutes * SecondsInMinute) + seconds) > TimeSpan.MaxValue.TotalSeconds)
+        {
+            return;
+        }
+
+        int milliseconds = haveMS ? Math.Abs(values.Last()) : 0;
+        if (((days * MilliSecondsInDay) + (hours * MilliSecondsInHour) + (minutes * MilliSecondsInMinute) + (seconds * MilliSecondsInSecond) + milliseconds) > TimeSpan.MaxValue.TotalMilliseconds)
+        {
+            return;
+        }
+
+        TimeSpan timeSpan = new TimeSpan(days, hours, minutes, seconds, milliseconds);
+        if (values[0] < 0)
+        {
+            timeSpan = timeSpan.Negate();
+        }
+
+        newValue = timeSpan.ToString();
+        var previousValues = oldValue?.Split(':', '.');
+        var currentValues = newValue?.Split(':', '.');
+        bool canSync = previousValues != null &&
+                       currentValues != null &&
+                       previousValues.Length == currentValues.Length &&
+                       newValue?.Length == oldValue?.Length;
+        if ((this.IsTextChangedFromUI && !this.UpdateValueOnEnterKey && canSync) || !this.IsTextChangedFromUI)
+        {
+            this.SyncTextAndValueProperties(updateValueFromText: true, newValue);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override void OnValueChanged(TimeSpan? oldValue, TimeSpan? newValue)
+    {
+        if (newValue.HasValue)
+        {
+            TimeSpan? value = (!this.UpdateValueOnEnterKey) ?
+                this.Value :
+                ((this.TextBox != null) ? ConvertTextToValue(this.TextBox.Text) : null);
+            this.InitializeDateTimeInfoList(value);
+        }
+
+        base.OnValueChanged(oldValue, newValue);
+    }
+
+    /// <inheritdoc/>
+    protected override void PerformMouseSelection()
+    {
+        if (!this.UpdateValueOnEnterKey)
+        {
+            this.CommitInput();
+            this.InitializeDateTimeInfoList(this.Value);
+        }
+
+        var dateTimeInfo = (this.SelectedDateTimeInfo == null && this.CurrentDateTimePart != DateTimePart.Other) ?
+            this.GetDateTimeInfo(this.CurrentDateTimePart) :
+            this.GetDateTimeInfo(this.TextBox.SelectionStart);
+        if (dateTimeInfo != null && dateTimeInfo.Type == DateTimePart.Other)
+        {
+            this.Select(this.GetDateTimeInfo(dateTimeInfo.StartPosition + dateTimeInfo.Length));
+        }
+        else
+        {
+            this.Select(dateTimeInfo);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override void InitializeDateTimeInfoList(TimeSpan? value)
+    {
+        var lastDayInfo = this.DateTimeInfoList.FirstOrDefault(x => x.Type == DateTimePart.Day);
+        bool hasDay = lastDayInfo != null;
+        var lastHourInfo = this.DateTimeInfoList.FirstOrDefault(x => x.Type == DateTimePart.Hour12 || x.Type == DateTimePart.Hour24);
+        bool hasHour = lastHourInfo != null;
+        var negInfo = this.DateTimeInfoList.FirstOrDefault(x => x.Type == DateTimePart.Other);
+        bool hasNegative = negInfo != null && negInfo.Content == "-";
+
+        this.DateTimeInfoList.Clear();
+        if (value.HasValue && value.Value.TotalMilliseconds < 0.0)
+        {
+            this.DateTimeInfoList.Add(new DateTimeInfo
+            {
+                Type = DateTimePart.Other,
+                Length = 1,
+                Content = "-",
+                IsReadOnly = true,
+            });
+
+            if (!hasNegative && this.TextBox != null)
+            {
+                this.FireSelectionChangedEvent = false;
+                this.TextBox.SelectionStart++;
+                this.FireSelectionChangedEvent = true;
+            }
+        }
+
+        if (!this.ShowHours && this.ShowDays)
+        {
+            throw new NotSupportedException("Cannot show days when show hours is set to false.");
+        }
+
+        if (this.ShowDays)
+        {
+            if (value.HasValue)
+            {
+                int dayLength = Math.Abs(value.Value.Days).ToString("00").Length;
+                this.DateTimeInfoList.Add(new DateTimeInfo
+                {
+                    Type = DateTimePart.Day,
+                    Length = Math.Max(2, dayLength),
+                    Format = "dd",
+                });
+
+                this.DateTimeInfoList.Add(new DateTimeInfo
+                {
+                    Type = DateTimePart.Other,
+                    Length = 1,
+                    Content = ".",
+                    IsReadOnly = true,
+                });
+
+                if (this.TextBox != null)
+                {
+                    if (hasDay && dayLength != lastDayInfo?.Length && this.SelectedDateTimeInfo?.Type != DateTimePart.Day)
+                    {
+                        this.FireSelectionChangedEvent = false;
+                        this.TextBox.SelectionStart = Math.Max(0, this.TextBox.SelectionStart + (dayLength - lastDayInfo?.Length ?? 0));
+                        this.FireSelectionChangedEvent = true;
+                    }
+                    else if (!hasDay)
+                    {
+                        this.FireSelectionChangedEvent = false;
+                        this.TextBox.SelectionStart += dayLength + 1;
+                        this.FireSelectionChangedEvent = true;
+                    }
+                }
+            }
+            else if (hasDay)
+            {
+                this.FireSelectionChangedEvent = false;
+                this.TextBox.SelectionStart = Math.Max(hasNegative ? 1 : 0, this.TextBox.SelectionStart - (lastDayInfo?.Length ?? 0 + 1));
+                this.FireSelectionChangedEvent = true;
+            }
+        }
+
+        if (this.ShowHours)
+        {
+            if (value.HasValue)
+            {
+                int hourLength = Math.Abs(value.Value.Hours).ToString("00").Length;
+                this.DateTimeInfoList.Add(new DateTimeInfo
+                {
+                    Type = DateTimePart.Hour24,
+                    Length = Math.Max(2, hourLength),
+                    Format = "hh",
+                });
+
+                this.DateTimeInfoList.Add(new DateTimeInfo
+                {
+                    Type = DateTimePart.Other,
+                    Length = 1,
+                    Content = ":",
+                    IsReadOnly = true,
+                });
+                if (this.TextBox != null)
+                {
+                    if (hasHour && hourLength != lastHourInfo?.Length && this.SelectedDateTimeInfo?.Type != DateTimePart.Hour24)
+                    {
+                        this.FireSelectionChangedEvent = false;
+                        this.TextBox.SelectionStart = Math.Max(0, this.TextBox.SelectionStart + (hourLength - lastHourInfo?.Length ?? 0));
+                        this.FireSelectionChangedEvent = true;
+                    }
+                    else if (!hasHour)
+                    {
+                        this.FireSelectionChangedEvent = false;
+                        this.TextBox.SelectionStart += hourLength + 1;
+                        this.FireSelectionChangedEvent = true;
+                    }
+                }
+            }
+            else if (hasHour)
+            {
+                this.FireSelectionChangedEvent = false;
+                this.TextBox.SelectionStart = Math.Max(hasNegative ? 1 : 0, this.TextBox.SelectionStart - (lastHourInfo.Length + 1));
+                this.FireSelectionChangedEvent = true;
+            }
+        }
+
+        this.DateTimeInfoList.Add(new DateTimeInfo
+        {
+            Type = DateTimePart.Minute,
+            Length = 2,
+            Format = "mm",
+        });
+
+        if (this.ShowSeconds)
+        {
+            this.DateTimeInfoList.Add(new DateTimeInfo
+            {
+                Type = DateTimePart.Other,
+                Length = 1,
+                Content = ":",
+                IsReadOnly = true,
+            });
+
+            this.DateTimeInfoList.Add(new DateTimeInfo
+            {
+                Type = DateTimePart.Second,
+                Length = 2,
+                Format = "ss",
+            });
+        }
+
+        if (this.FractionalSecondsDigitsCount > 0)
+        {
+            this.DateTimeInfoList.Add(new DateTimeInfo
+            {
+                Type = DateTimePart.Other,
+                Length = 1,
+                Content = ".",
+                IsReadOnly = true,
+            });
+
+            string text = new string('f', this.FractionalSecondsDigitsCount);
+            if (text.Length == 1)
+            {
+                text = "%" + text;
+            }
+
+            this.DateTimeInfoList.Add(new DateTimeInfo
+            {
+                Type = DateTimePart.Millisecond,
+                Length = FractionalSecondsDigitsCount,
+                Format = text,
+            });
+        }
+
+        if (value.HasValue)
+        {
+            ParseValueIntoTimeSpanInfo(value, modifyInfo: true);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override bool IsLowerThan(TimeSpan? value1, TimeSpan? value2)
+    {
+        if (!value1.HasValue || !value2.HasValue)
+        {
+            return false;
+        }
+
+        return value1.Value < value2.Value;
+    }
+
+    /// <inheritdoc/>
+    protected override bool IsGreaterThan(TimeSpan? value1, TimeSpan? value2)
+    {
+        if (!value1.HasValue || !value2.HasValue)
+        {
+            return false;
+        }
+
+        return value1.Value > value2.Value;
+    }
+
+    /// <inheritdoc/>
+    protected override object OnCurrentDateTimePartCoerce(object baseValue)
+    {
+        if (baseValue is DateTimePart dateTimePart)
+        {
+            switch (dateTimePart)
+            {
+                case DateTimePart.Month:
+                case DateTimePart.MonthName:
+                case DateTimePart.Other:
+                case DateTimePart.Period:
+                case DateTimePart.TimeZone:
+                case DateTimePart.Year:
+                    OnCurrentDateTimePartChanged(dateTimePart, DateTimePart.Day);
+                    return DateTimePart.Day;
+                case DateTimePart.AmPmDesignator:
+                case DateTimePart.Hour12:
+                    OnCurrentDateTimePartChanged(dateTimePart, DateTimePart.Hour24);
+                    return DateTimePart.Hour24;
+                default:
+                    return baseValue;
+            }
+        }
+
+        return baseValue;
+    }
+
+    /// <inheritdoc/>
+    internal override void Select(DateTimeInfo info)
+    {
+        if (this.UpdateValueOnEnterKey)
+        {
+            if (info == null || info.Equals(this.SelectedDateTimeInfo) || this.TextBox == null || string.IsNullOrEmpty(this.TextBox.Text))
+            {
+                return;
+            }
+
+            int num = this.DateTimeInfoList.IndexOf(info) / 2;
+            if (num < 0)
+            {
+                base.Select(info);
+                return;
+            }
+
+            string[] array = this.Text.Split(':', '.');
+            int num2 = array.Take(num).Sum((string x) => x.Length) + num;
+            int num3 = array[num].Length;
+            if (num == 0 && (array.First()?.StartsWith('-') ?? false))
+            {
+                num2++;
+                num3--;
+            }
+
+            this.FireSelectionChangedEvent = false;
+            this.TextBox.Select(num2, num3);
+            this.FireSelectionChangedEvent = true;
+            this.SelectedDateTimeInfo = info;
+            this.SetCurrentValue(CurrentDateTimePartProperty, info.Type);
+        }
+        else
+        {
+            base.Select(info);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new GenericAutomationPeer(this);
+    }
+
+    private string ParseValueIntoTimeSpanInfo(TimeSpan? value, bool modifyInfo)
+    {
+        string text = string.Empty;
+        this.DateTimeInfoList.ForEach(delegate (DateTimeInfo info)
+        {
+            if (info.Format == null)
+            {
+                if (modifyInfo)
+                {
+                    info.StartPosition = text.Length;
+                    info.Length = info.Content.Length;
+                }
+
+                text += info.Content;
+            }
+            else
+            {
+                TimeSpan timeSpan = TimeSpan.Parse(value.ToString());
+                if (modifyInfo)
+                {
+                    info.StartPosition = text.Length;
+                }
+
+                string text2 = string.Empty;
+                text2 = ((!ShowDays && timeSpan.Days != 0 && info.Format == "hh") ? Math.Truncate(Math.Abs(timeSpan.TotalHours)).ToString() : timeSpan.ToString(info.Format, base.CultureInfo.DateTimeFormat));
+                if (modifyInfo)
+                {
+                    if (info.Format == "dd")
+                    {
+                        text2 = Convert.ToInt32(text2).ToString("00");
+                    }
+
+                    info.Content = text2;
+                    info.Length = info.Content.Length;
+                }
+
+                text += text2;
+            }
+        });
+        return text;
+    }
+
+    private TimeSpan? UpdateTimeSpan(TimeSpan? currentValue, int value)
+    {
+        var dateTimeInfo = this.SelectedDateTimeInfo;
+        if (dateTimeInfo == null)
+        {
+            dateTimeInfo = this.CurrentDateTimePart != DateTimePart.Other ?
+                this.GetDateTimeInfo(this.CurrentDateTimePart) :
+                ((this.DateTimeInfoList[0].Content != "-") ? this.DateTimeInfoList[0] : this.DateTimeInfoList[1]);
+            if (dateTimeInfo == null)
+            {
+                dateTimeInfo = this.DateTimeInfoList[0];
+            }
+        }
+
+        TimeSpan? timeSpan = null;
+        try
+        {
+            switch (dateTimeInfo.Type)
+            {
+                case DateTimePart.Day:
+                    timeSpan = currentValue.Value.Add(new TimeSpan(value, 0, 0, 0, 0));
+                    break;
+                case DateTimePart.Hour24:
+                    timeSpan = currentValue.Value.Add(new TimeSpan(0, value, 0, 0, 0));
+                    break;
+                case DateTimePart.Minute:
+                    timeSpan = currentValue.Value.Add(new TimeSpan(0, 0, value, 0, 0));
+                    break;
+                case DateTimePart.Second:
+                    timeSpan = currentValue.Value.Add(new TimeSpan(0, 0, 0, value, 0));
+                    break;
+                case DateTimePart.Millisecond:
+                    value = FractionalSecondsDigitsCount switch
+                    {
+                        1 => value * 100,
+                        2 => value * 10,
+                        _ => value,
+                    };
+
+                    timeSpan = currentValue.Value.Add(new TimeSpan(0, 0, 0, 0, value));
+                    break;
+            }
+        }
+        catch
+        {
+        }
+
+        timeSpan = (timeSpan.HasValue && timeSpan.HasValue) ? new TimeSpan?(timeSpan.Value) : timeSpan;
+        return this.CoerceValueMinMax(timeSpan);
+    }
+
+    private void Increment(int step)
+    {
+        if (this.UpdateValueOnEnterKey)
+        {
+            string text = string.Empty;
+            TimeSpan? currentValue = ConvertTextToValue(this.TextBox.Text);
+            TimeSpan? timeSpan = currentValue.HasValue ?
+                this.UpdateTimeSpan(currentValue, step) :
+                new TimeSpan?(this.DefaultValue ?? TimeSpan.Zero);
+            if (!timeSpan.HasValue || this.DateTimeInfoList == null)
+            {
+                return;
+            }
+
+            int num = 0;
+            int length = 0;
+            if (timeSpan.Value.TotalMilliseconds < 0.0 && this.DateTimeInfoList[0].Content != "-")
+            {
+                text = "-";
+            }
+
+            for (int i = 0; i < this.DateTimeInfoList.Count; i++)
+            {
+                DateTimeInfo dateTimeInfo = this.DateTimeInfoList[i];
+                int count = (dateTimeInfo.Content != null) ? dateTimeInfo.Content.Length : dateTimeInfo.Length;
+                if (this.SelectedDateTimeInfo != null && dateTimeInfo.Type == this.SelectedDateTimeInfo.Type)
+                {
+                    num = text.Length;
+                }
+
+                switch (dateTimeInfo.Type)
+                {
+                    case DateTimePart.Day:
+                        {
+                            string text6 = Math.Abs(timeSpan.Value.Days).ToString(new string('0', count));
+                            dateTimeInfo.StartPosition = text.Length;
+                            dateTimeInfo.Length = text6.Length;
+                            text += text6;
+                            break;
+                        }
+
+                    case DateTimePart.Hour24:
+                        {
+                            string text3 = i <= 1 ?
+                                Math.Truncate(Math.Abs(timeSpan.Value.TotalHours)).ToString(new string('0', count)) :
+                                Math.Abs(timeSpan.Value.Hours).ToString(new string('0', count));
+                            dateTimeInfo.StartPosition = text.Length;
+                            dateTimeInfo.Length = text3.Length;
+                            text += text3;
+                            break;
+                        }
+
+                    case DateTimePart.Minute:
+                        {
+                            string text5 = ((i <= 1) ? Math.Truncate(Math.Abs(timeSpan.Value.TotalMinutes)).ToString(new string('0', count)) : Math.Abs(timeSpan.Value.Minutes).ToString(new string('0', count)));
+                            dateTimeInfo.StartPosition = text.Length;
+                            dateTimeInfo.Length = text5.Length;
+                            text += text5;
+                            break;
+                        }
+
+                    case DateTimePart.Second:
+                        {
+                            string text4 = i <= 1 ?
+                                Math.Truncate(Math.Abs(timeSpan.Value.TotalSeconds)).ToString(new string('0', count)) :
+                                Math.Abs(timeSpan.Value.Seconds).ToString(new string('0', count));
+                            dateTimeInfo.StartPosition = text.Length;
+                            dateTimeInfo.Length = text4.Length;
+                            text += text4;
+                            break;
+                        }
+
+                    case DateTimePart.Millisecond:
+                        {
+                            string text7 = i <= 1 ?
+                                Math.Truncate(Math.Abs(timeSpan.Value.TotalMilliseconds)).ToString(new string('0', count)) :
+                                Math.Abs(timeSpan.Value.Milliseconds).ToString(new string('0', count));
+                            dateTimeInfo.StartPosition = text.Length;
+                            dateTimeInfo.Length = text7.Length;
+                            text += text7;
+                            break;
+                        }
+
+                    case DateTimePart.Other:
+                        {
+                            string text2 = (i == 0 && timeSpan.Value.TotalMilliseconds >= 0.0) ? "" : dateTimeInfo.Content;
+                            dateTimeInfo.StartPosition = text.Length;
+                            dateTimeInfo.Length = text2.Length;
+                            text += text2;
+                            break;
+                        }
+                }
+
+                if (this.SelectedDateTimeInfo != null && dateTimeInfo.Type == this.SelectedDateTimeInfo.Type)
+                {
+                    length = text.Length - num;
+                }
+            }
+
+            this.TextBox.Text = text;
+            this.TextBox.Select(num, length);
+        }
+        else if (this.Value.HasValue)
+        {
+            TimeSpan? timeSpan2 = UpdateTimeSpan(this.Value, step);
+            if (!timeSpan2.HasValue)
+            {
+                return;
+            }
+
+            int start = 0;
+            int length2 = 0;
+            this.InitializeDateTimeInfoList(timeSpan2);
+            if (this.SelectedDateTimeInfo == null && this.CurrentDateTimePart != DateTimePart.Other)
+            {
+                var dateTimeInfo2 = this.GetDateTimeInfo(this.CurrentDateTimePart);
+                if (dateTimeInfo2 != null)
+                {
+                    start = dateTimeInfo2.StartPosition;
+                    length2 = dateTimeInfo2.Length;
+                }
+            }
+            else
+            {
+                start = this.TextBox?.SelectionStart ?? 0;
+                length2 = this.TextBox?.SelectionLength ?? 0;
+            }
+
+            this.SetCurrentValue(ValueProperty, timeSpan2);
+            this.TextBox?.Select(start, length2);
+        }
+        else
+        {
+            this.SetCurrentValue(ValueProperty, this.DefaultValue ?? TimeSpan.Zero);
+        }
+    }
+
+    private bool IsNumber(string str)
+    {
+        for (int i = 0; i < str.Length; i++)
+        {
+            if (!char.IsNumber(str[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private void UpdateValue()
+    {
+        TimeSpan? value = !this.UpdateValueOnEnterKey ?
+            this.Value :
+            (this.TextBox != null ? ConvertTextToValue(this.TextBox.Text) : null);
+        this.InitializeDateTimeInfoList(value);
+        this.SyncTextAndValueProperties(updateValueFromText: false, this.Text);
+    }
+
+    private TimeSpan? ResetToLastValidValue()
+    {
+        this.InitializeDateTimeInfoList(this.Value);
+        return this.Value;
+    }
+
+    private void OnPasting(object sender, DataObjectPastingEventArgs e)
+    {
+        if (e.DataObject.GetDataPresent(typeof(string)) && !TimeSpan.TryParse(e.DataObject.GetData(typeof(string)) as string, out var _))
+        {
+            e.CancelCommand();
+        }
+    }
+}

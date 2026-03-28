@@ -1,0 +1,32 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// Property grid context menu.
+/// </summary>
+public class PropertyGridContextMenu : ContextMenu
+{
+    /// <inheritdoc/>
+    protected override void OnOpened(RoutedEventArgs e)
+    {
+        base.OnOpened(e);
+        var contextMenu = e.OriginalSource as ContextMenu;
+        if ((contextMenu != null) && (contextMenu.PlacementTarget != null))
+        {
+            var control = contextMenu.PlacementTarget;
+
+            // Get PropertyItemBase parent
+            var parent = VisualTreeHelper.GetParent(control);
+            while (parent != null)
+            {
+                var propertyItemBase = parent as PropertyItemBase;
+                if (propertyItemBase != null)
+                {
+                    contextMenu.DataContext = propertyItemBase;
+                    break;
+                }
+
+                parent = VisualTreeHelper.GetParent(parent);
+            }
+        }
+    }
+}

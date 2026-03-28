@@ -1,0 +1,82 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+internal class CollectionPropertyDescriptor : PropertyDescriptor
+{
+    private object? item;
+    private string name;
+
+    public CollectionPropertyDescriptor(IEnumerable collection, object item)
+       : base((!string.IsNullOrEmpty(item.ToString())) ? item.ToString() : item.GetType().Name, null)
+    {
+        this.item = item;
+        int num = 0;
+        foreach (object item2 in collection)
+        {
+            num++;
+            if (item2.Equals(Item))
+            {
+                Type type = Item.GetType();
+                MethodInfo method = type.GetMethod("ToString");
+                if (method != null && type.IsSubclassOf(method.DeclaringType))
+                {
+                    name = this.Item.ToString() + " " + num;
+                }
+                else
+                {
+                    name = this.Item.ToString();
+                }
+
+                break;
+            }
+        }
+    }
+
+    public object Item => this.item;
+
+    /// <inheritdoc/>
+    public override AttributeCollection Attributes => new AttributeCollection((Attribute[]?)null);
+
+    /// <inheritdoc/>
+    public override Type ComponentType => this.Item.GetType();
+
+    /// <inheritdoc/>
+    public override string DisplayName => name;
+
+    /// <inheritdoc/>
+    public override bool IsReadOnly => true;
+
+    /// <inheritdoc/>
+    public override string Name => name;
+
+    /// <inheritdoc/>
+    public override Type PropertyType => this.Item.GetType();
+
+    /// <inheritdoc/>
+    public override bool CanResetValue(object component)
+    {
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public override object GetValue(object? component)
+    {
+        return this.Item;
+    }
+
+    /// <inheritdoc/>
+    public override void ResetValue(object component)
+    {
+    }
+
+    /// <inheritdoc/>
+    public override bool ShouldSerializeValue(object component)
+    {
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public override void SetValue(object? component, object? value)
+    {
+        this.item = value;
+    }
+}

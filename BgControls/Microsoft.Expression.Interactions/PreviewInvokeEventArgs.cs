@@ -1,0 +1,6 @@
+namespace Microsoft.Expression.Interactions;
+
+public class PreviewInvokeEventArgs : EventArgs
+{
+    public bool Cancelling { get; set; }
+}

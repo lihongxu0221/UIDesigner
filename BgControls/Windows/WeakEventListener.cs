@@ -1,0 +1,133 @@
+namespace BgControls.Windows;
+
+/// <summary>
+/// 弱事件监听器类，用于在弱事件模式下分发事件回调，避免强引用导致的内存泄漏.
+/// </summary>
+/// <typeparam name="TArgs">事件参数的具体类型.</typeparam>
+internal class WeakEventListener<TArgs> : IWeakEventListener
+    where TArgs : EventArgs
+{
+    /// <summary>
+    /// 事件回调动作委托.
+    /// </summary>
+    private readonly Action<object, TArgs> callback;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WeakEventListener{TArgs}"/> class.
+    /// </summary>
+    /// <param name="callback">事件触发时要执行的回调方法.</param>
+    public WeakEventListener(Action<object, TArgs> callback)
+    {
+        // 验证回调委托是否为空.
+        ArgumentNullException.ThrowIfNull(callback, nameof(callback));
+
+        // 初始化内部回调引用.
+        this.callback = callback;
+    }
+
+    /// <summary>
+    /// 接收来自弱事件管理器的事件，并将其转发至预设的回调方法.
+    /// </summary>
+    /// <param name="managerType">触发此事件的 WeakEventManager 的类型.</param>
+    /// <param name="sender">发出事件的对象.</param>
+    /// <param name="eventArgs">包含事件数据的参数对象.</param>
+    /// <returns>如果监听器已处理该事件则返回 true；否则返回 false.</returns>
+    public bool ReceiveWeakEvent(Type managerType, object sender, EventArgs eventArgs)
+    {
+        // 将通用的 EventArgs 转换为指定的泛型参数类型并执行回调.
+        this.callback?.Invoke(sender, (TArgs)eventArgs);
+
+        return true;
+    }
+}
+
+/// <summary>
+/// 弱事件监听器，用于在不影响目标对象生命周期的前提下监听事件，防止内存泄漏.
+/// </summary>
+/// <typeparam name="TInstance">订阅事件的实例类型.</typeparam>
+/// <typeparam name="TSource">事件源的类型.</typeparam>
+/// <typeparam name="TEventArgs">事件参数的类型层次.</typeparam>
+internal class WeakEventListener<TInstance, TSource, TEventArgs>
+    where TInstance : class
+{
+    /// <summary>
+    /// 目标实例的弱引用对象.
+    /// </summary>
+    private readonly WeakReference weakInstance;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WeakEventListener{TInstance, TSource, TEventArgs}"/> class.
+    /// </summary>
+    /// <param name="instance">要监听的目标实例.</param>
+    public WeakEventListener(TInstance instance)
+    {
+        // 验证输入实例是否为空.
+        ArgumentNullException.ThrowIfNull(instance, nameof(instance));
+
+        // 初始化对目标实例的弱引用.
+        this.weakInstance = new WeakReference(instance);
+    }
+
+    /// <summary>
+    /// Gets or sets 事件触发时执行的委托动作.
+    /// </summary>
+    public Action<TInstance, TSource?, TEventArgs>? OnEventAction { get; set; }
+
+    /// <summary>
+    /// Gets or sets 解除事件订阅时执行的委托动作.
+    /// </summary>
+    public Action<WeakEventListener<TInstance, TSource?, TEventArgs>>? OnDetachAction { get; set; }
+
+    /// <summary>
+    /// Gets 弱引用指向的目标实例对象.
+    /// </summary>
+    internal object? TargetInstance
+    {
+        get
+        {
+            // 检查弱引用是否仍然存活.
+            if (this.weakInstance != null && this.weakInstance.IsAlive)
+            {
+                return this.weakInstance.Target;
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 处理所监听事件的触发逻辑.
+    /// </summary>
+    /// <param name="source">事件的来源对象.</param>
+    /// <param name="eventArgs">事件的参数数据.</param>
+    public void OnEvent(TSource? source, TEventArgs eventArgs)
+    {
+        // 尝试获取目标实例的强引用以进行处理.
+        if (this.weakInstance.Target is TInstance instance)
+        {
+            // 如果处理动作已注册，则执行该动作.
+            if (this.OnEventAction != null)
+            {
+                this.OnEventAction.Invoke(instance, source, eventArgs);
+            }
+        }
+        else
+        {
+            // 如果目标实例已被垃圾回收，则执行卸载逻辑.
+            this.Detach();
+        }
+    }
+
+    /// <summary>
+    /// 执行卸载逻辑并解除事件监听.
+    /// </summary>
+    public void Detach()
+    {
+        // 如果注册了卸载动作，则执行该动作并清除引用以防重复执行.
+        if (this.OnDetachAction != null)
+        {
+            this.OnDetachAction.Invoke(this);
+            this.OnDetachAction = null;
+        }
+    }
+}

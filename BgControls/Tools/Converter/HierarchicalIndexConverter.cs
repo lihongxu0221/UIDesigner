@@ -1,0 +1,90 @@
+namespace BgControls.Tools.Converter;
+
+/// <summary>
+/// 一个转换器，用于计算 TreeViewItem 的层级序号 (例如, "1", "1.1", "1.2.1").
+/// </summary>
+public class HierarchicalIndexConverter : IValueConverter
+{
+    /// <inheritdoc/>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is not TreeViewItem item)
+        {
+            return string.Empty;
+        }
+
+        return GetHierarchicalIndex(item);
+    }
+
+    private string GetHierarchicalIndex(TreeViewItem item)
+    {
+        // 用于存储从当前项到根项的每一层索引
+        var indexPath = new StringBuilder();
+
+        // 从当前项开始向上遍历
+        var current = item;
+        while (current != null)
+        {
+            var parentItemsControl = GetParentItemsControl(current);
+            if (parentItemsControl != null)
+            {
+                // 获取当前项在其父级中的索引
+                int index = parentItemsControl.ItemContainerGenerator.IndexFromContainer(current);
+                if (index != -1) // -1 表示找不到，这在某些时机可能发生
+                {
+                    // 将索引（+1）插入到路径的最前端
+                    if (indexPath.Length > 0)
+                    {
+                        indexPath.Insert(0, ".");
+                    }
+
+                    _ = indexPath.Insert(0, index + 1);
+                }
+            }
+
+            // 继续向上查找父级的 TreeViewItem
+            current = GetParentTreeViewItem(current);
+        }
+
+        return indexPath.ToString();
+    }
+
+    /// <summary>
+    /// 辅助方法，用于在可视化树中向上查找最近的 ItemsControl.
+    /// </summary>
+    private ItemsControl? GetParentItemsControl(DependencyObject item)
+    {
+        var parent = VisualTreeHelper.GetParent(item);
+        while (parent != null && parent is not ItemsControl)
+        {
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+
+        return parent as ItemsControl;
+    }
+
+    /// <summary>
+    /// 辅助方法，用于在可视化树中向上查找最近的 TreeViewItem.
+    /// </summary>
+    private TreeViewItem? GetParentTreeViewItem(DependencyObject item)
+    {
+        var parent = VisualTreeHelper.GetParent(item);
+        while (parent != null && parent is not TreeViewItem)
+        {
+            // 如果我们先遇到了 TreeView 根，说明已经到顶了，没有父 TreeViewItem
+            if (parent is TreeView)
+            {
+                return null;
+            }
+
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+
+        return parent as TreeViewItem;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

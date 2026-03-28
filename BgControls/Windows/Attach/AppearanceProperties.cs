@@ -1,0 +1,121 @@
+namespace BgControls.Windows.Attach;
+
+/// <summary>
+/// 外观属性辅助类.
+/// </summary>
+/// <remarks>
+/// <para>
+/// 此类提供了一组附加属性 (Attached Properties)，用于设置控件的外观样式.
+/// </para>
+/// <para>
+/// 它主要用于那些自身没有直接暴露这些属性的控件，或者用于在 ControlTemplate 中绑定特定的视觉元素.
+/// 例如：<c>OuterCornerRadius</c>, <c>ContentMargin</c>, <c>HeaderForeground</c> 和 <c>HeaderFontWeight</c>.
+/// </para>
+/// </remarks>
+public class AppearanceProperties
+{
+    /// <summary>
+    /// 标识 OuterCornerRadius 附加属性.
+    /// </summary>
+    public static readonly DependencyProperty OuterCornerRadiusProperty =
+        DependencyProperty.RegisterAttached("OuterCornerRadius", typeof(CornerRadius), typeof(AppearanceProperties), new FrameworkPropertyMetadata(new CornerRadius(0.0)));
+
+    /// <summary>
+    /// 标识 ContentMargin 附加属性.
+    /// </summary>
+    public static readonly DependencyProperty ContentMarginProperty =
+        DependencyProperty.RegisterAttached("ContentMargin", typeof(Thickness), typeof(AppearanceProperties), new FrameworkPropertyMetadata(new Thickness(0.0)));
+
+    /// <summary>
+    /// 标识 HeaderForeground 附加属性.
+    /// </summary>
+    public static readonly DependencyProperty HeaderForegroundProperty =
+        DependencyProperty.RegisterAttached("HeaderForeground", typeof(Brush), typeof(AppearanceProperties), new FrameworkPropertyMetadata((Brush)new SolidColorBrush(Colors.Black).GetAsFrozen()));
+
+    /// <summary>
+    /// 标识 HeaderFontWeight 附加属性.
+    /// </summary>
+    public static readonly DependencyProperty HeaderFontWeightProperty =
+        DependencyProperty.RegisterAttached("HeaderFontWeight", typeof(FontWeight), typeof(AppearanceProperties), new FrameworkPropertyMetadata(FontWeights.Normal));
+
+    /// <summary>
+    /// 获取指定对象的 OuterCornerRadius (外层圆角半径) 属性值.
+    /// </summary>
+    /// <param name="obj">要获取值的依赖对象.</param>
+    /// <returns>外层圆角半径.</returns>
+    public static CornerRadius GetOuterCornerRadius(DependencyObject obj)
+    {
+        return (CornerRadius)obj.GetValue(OuterCornerRadiusProperty);
+    }
+
+    /// <summary>
+    /// 设置指定对象的 OuterCornerRadius (外层圆角半径) 属性值.
+    /// </summary>
+    /// <param name="obj">要设置值的依赖对象.</param>
+    /// <param name="value">要设置的圆角半径值.</param>
+    public static void SetOuterCornerRadius(DependencyObject obj, CornerRadius value)
+    {
+        obj.SetValue(OuterCornerRadiusProperty, value);
+    }
+
+    /// <summary>
+    /// 获取指定对象的 ContentMargin (内容边距) 属性值.
+    /// </summary>
+    /// <param name="obj">要获取值的依赖对象.</param>
+    /// <returns>内容边距.</returns>
+    /// <remarks>通常用于控制 ContentPresenter 或内部容器与边框之间的距离.</remarks>
+    public static Thickness GetContentMargin(DependencyObject obj)
+    {
+        return (Thickness)obj.GetValue(ContentMarginProperty);
+    }
+
+    /// <summary>
+    /// 设置指定对象的 ContentMargin (内容边距) 属性值.
+    /// </summary>
+    /// <param name="obj">要设置值的依赖对象.</param>
+    /// <param name="value">要设置的边距值.</param>
+    public static void SetContentMargin(DependencyObject obj, Thickness value)
+    {
+        obj.SetValue(ContentMarginProperty, value);
+    }
+
+    /// <summary>
+    /// 获取指定对象的 HeaderForeground (标题前景色) 属性值.
+    /// </summary>
+    /// <param name="obj">要获取值的依赖对象.</param>
+    /// <returns>标题文本的画笔颜色.</returns>
+    public static Brush GetHeaderForeground(DependencyObject obj)
+    {
+        return (Brush)obj.GetValue(HeaderForegroundProperty);
+    }
+
+    /// <summary>
+    /// 设置指定对象的 HeaderForeground (标题前景色) 属性值.
+    /// </summary>
+    /// <param name="obj">要设置值的依赖对象.</param>
+    /// <param name="value">要设置的画笔颜色.</param>
+    public static void SetHeaderForeground(DependencyObject obj, Brush value)
+    {
+        obj.SetValue(HeaderForegroundProperty, value);
+    }
+
+    /// <summary>
+    /// 获取指定对象的 HeaderFontWeight (标题字重) 属性值.
+    /// </summary>
+    /// <param name="obj">要获取值的依赖对象.</param>
+    /// <returns>标题的字体粗细.</returns>
+    public static FontWeight GetHeaderFontWeight(DependencyObject obj)
+    {
+        return (FontWeight)obj.GetValue(HeaderFontWeightProperty);
+    }
+
+    /// <summary>
+    /// 设置指定对象的 HeaderFontWeight (标题字重) 属性值.
+    /// </summary>
+    /// <param name="obj">要设置值的依赖对象.</param>
+    /// <param name="value">要设置的字体粗细值.</param>
+    public static void SetHeaderFontWeight(DependencyObject obj, FontWeight value)
+    {
+        obj.SetValue(HeaderFontWeightProperty, value);
+    }
+}

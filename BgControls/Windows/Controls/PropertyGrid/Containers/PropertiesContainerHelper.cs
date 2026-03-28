@@ -1,0 +1,24 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// 属性容器辅助类.
+/// </summary>
+internal class PropertiesContainerHelper : PropertiesContainerHelperBase
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PropertiesContainerHelper"/> class.
+    /// </summary>
+    /// <param name="propertyContainer">属性容器.</param>
+    public PropertiesContainerHelper(IPropertyContainer propertyContainer)
+        : base(propertyContainer)
+    {
+        this.CollectionView = new PropertiesCollectionView();
+    }
+
+    /// <inheritdoc/>
+    public override void OnEndInit()
+    {
+        base.OnEndInit();
+        this.CollectionView.Refresh();
+    }
+}

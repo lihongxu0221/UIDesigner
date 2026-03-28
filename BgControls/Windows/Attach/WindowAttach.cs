@@ -1,0 +1,258 @@
+using BgControls.Tools.Interop;
+using BgControls.Windows.Datas;
+
+namespace BgControls.Windows.Attach;
+
+/// <summary>
+/// 窗口附加属性类，提供附加属性用于控制窗口的行为.
+/// </summary>
+public static class WindowAttach
+{
+    /// <summary>
+    /// 是否启用拖动元素的附加属性.
+    /// </summary>
+    public static readonly DependencyProperty IsDragElementProperty = DependencyProperty.RegisterAttached(
+        "IsDragElement", typeof(bool), typeof(WindowAttach), new PropertyMetadata(ValueBoxes.FalseBox, OnIsDragElementChanged));
+
+    /// <summary>
+    /// 设置是否启用拖动元素.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <param name="value">是否启用.</param>
+    public static void SetIsDragElement(DependencyObject element, bool value) => element.SetValue(IsDragElementProperty, ValueBoxes.BooleanBox(value));
+
+    /// <summary>
+    /// 获取是否启用拖动元素.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <returns>是否启用.</returns>
+    public static bool GetIsDragElement(DependencyObject element) => (bool)element.GetValue(IsDragElementProperty);
+
+    /// <summary>
+    /// 当IsDragElement属性值更改时的处理方法.
+    /// </summary>
+    /// <param name="d">目标依赖对象.</param>
+    /// <param name="e">依赖属性更改事件参数.</param>
+    private static void OnIsDragElementChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is UIElement ctl)
+        {
+            if ((bool)e.NewValue)
+            {
+                ctl.MouseLeftButtonDown += DragElement_MouseLeftButtonDown;
+            }
+            else
+            {
+                ctl.MouseLeftButtonDown -= DragElement_MouseLeftButtonDown;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处理拖动元素的鼠标左键按下事件.
+    /// </summary>
+    /// <param name="sender">事件发送者.</param>
+    /// <param name="e">鼠标按钮事件参数.</param>
+    private static void DragElement_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is DependencyObject obj && e.ButtonState == MouseButtonState.Pressed)
+        {
+            System.Windows.Window.GetWindow(obj)?.DragMove();
+        }
+    }
+
+    /// <summary>
+    /// 是否忽略Alt+F4关闭窗口的附加属性.
+    /// </summary>
+    public static readonly DependencyProperty IgnoreAltF4Property = DependencyProperty.RegisterAttached(
+        "IgnoreAltF4", typeof(bool), typeof(WindowAttach), new PropertyMetadata(ValueBoxes.FalseBox, OnIgnoreAltF4Changed));
+
+    /// <summary>
+    /// 当IgnoreAltF4属性值更改时的处理方法.
+    /// </summary>
+    /// <param name="d">目标依赖对象.</param>
+    /// <param name="e">依赖属性更改事件参数.</param>
+    private static void OnIgnoreAltF4Changed(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is Window window)
+        {
+            if ((bool)e.NewValue)
+            {
+                window.PreviewKeyDown += Window_PreviewKeyDown;
+            }
+            else
+            {
+                window.PreviewKeyDown -= Window_PreviewKeyDown;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处理窗口的预览键盘按下事件.
+    /// </summary>
+    /// <param name="sender">事件发送者.</param>
+    /// <param name="e">键盘事件参数.</param>
+    private static void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.System && e.SystemKey == Key.F4)
+        {
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// 设置是否忽略Alt+F4关闭窗口.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <param name="value">是否忽略.</param>
+    public static void SetIgnoreAltF4(DependencyObject element, bool value)
+        => element.SetValue(IgnoreAltF4Property, ValueBoxes.BooleanBox(value));
+
+    /// <summary>
+    /// 获取是否忽略Alt+F4关闭窗口.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <returns>是否忽略.</returns>
+    public static bool GetIgnoreAltF4(DependencyObject element)
+        => (bool)element.GetValue(IgnoreAltF4Property);
+
+    /// <summary>
+    /// 是否在任务管理器中显示窗口的附加属性.
+    /// </summary>
+    public static readonly DependencyProperty ShowInTaskManagerProperty = DependencyProperty.RegisterAttached(
+        "ShowInTaskManager", typeof(bool), typeof(WindowAttach), new PropertyMetadata(ValueBoxes.TrueBox, OnShowInTaskManagerChanged));
+
+    /// <summary>
+    /// 当ShowInTaskManager属性值更改时的处理方法.
+    /// </summary>
+    /// <param name="d">目标依赖对象.</param>
+    /// <param name="e">依赖属性更改事件参数.</param>
+    private static void OnShowInTaskManagerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is Window window)
+        {
+            var v = (bool)e.NewValue;
+            window.SetCurrentValue(System.Windows.Window.ShowInTaskbarProperty, v);
+
+            if (v)
+            {
+                window.SourceInitialized -= Window_SourceInitialized;
+            }
+            else
+            {
+                window.SourceInitialized += Window_SourceInitialized;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处理窗口的SourceInitialized事件.
+    /// </summary>
+    /// <param name="sender">事件发送者.</param>
+    /// <param name="e">事件参数.</param>
+    private static void Window_SourceInitialized(object? sender, EventArgs e)
+    {
+        if (sender is Window window)
+        {
+            var _ = new WindowInteropHelper(window)
+            {
+                Owner = InteropMethods.GetDesktopWindow()
+            };
+        }
+    }
+
+    /// <summary>
+    /// 设置是否在任务管理器中显示窗口.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <param name="value">是否显示.</param>
+    public static void SetShowInTaskManager(DependencyObject element, bool value)
+        => element.SetValue(ShowInTaskManagerProperty, ValueBoxes.BooleanBox(value));
+
+    /// <summary>
+    /// 获取是否在任务管理器中显示窗口.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <returns>是否显示.</returns>
+    public static bool GetShowInTaskManager(DependencyObject element)
+        => (bool)element.GetValue(ShowInTaskManagerProperty);
+
+    /// <summary>
+    /// 关闭窗口时是否隐藏而不是关闭的附加属性.
+    /// </summary>
+    public static readonly DependencyProperty HideWhenClosingProperty = DependencyProperty.RegisterAttached(
+        "HideWhenClosing", typeof(bool), typeof(WindowAttach), new PropertyMetadata(ValueBoxes.FalseBox, OnHideWhenClosingChanged));
+
+    /// <summary>
+    /// 当HideWhenClosing属性值更改时的处理方法.
+    /// </summary>
+    /// <param name="d">目标依赖对象.</param>
+    /// <param name="e">依赖属性更改事件参数.</param>
+    private static void OnHideWhenClosingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is Window window)
+        {
+            var v = (bool)e.NewValue;
+            if (v)
+            {
+                window.Closing += Window_Closing;
+            }
+            else
+            {
+                window.Closing -= Window_Closing;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 处理窗口的Closing事件.
+    /// </summary>
+    /// <param name="sender">事件发送者.</param>
+    /// <param name="e">取消事件参数.</param>
+    private static void Window_Closing(object? sender, CancelEventArgs e)
+    {
+        if (sender is Window window)
+        {
+            window.Hide();
+            e.Cancel = true;
+        }
+    }
+
+    /// <summary>
+    /// 设置关闭窗口时是否隐藏而不是关闭.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <param name="value">是否隐藏.</param>
+    public static void SetHideWhenClosing(DependencyObject element, bool value)
+        => element.SetValue(HideWhenClosingProperty, ValueBoxes.BooleanBox(value));
+
+    /// <summary>
+    /// 获取关闭窗口时是否隐藏而不是关闭.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <returns>是否隐藏.</returns>
+    public static bool GetHideWhenClosing(DependencyObject element)
+        => (bool)element.GetValue(HideWhenClosingProperty);
+
+    /// <summary>
+    /// 是否将内容延伸到非客户区域的附加属性.
+    /// </summary>
+    public static readonly DependencyProperty ExtendContentToNonClientAreaProperty = DependencyProperty.RegisterAttached(
+        "ExtendContentToNonClientArea", typeof(bool), typeof(WindowAttach), new PropertyMetadata(ValueBoxes.FalseBox));
+
+    /// <summary>
+    /// 设置是否将内容延伸到非客户区域.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <param name="value">是否延伸.</param>
+    public static void SetExtendContentToNonClientArea(DependencyObject element, bool value)
+        => element.SetValue(ExtendContentToNonClientAreaProperty, ValueBoxes.BooleanBox(value));
+
+    /// <summary>
+    /// 获取是否将内容延伸到非客户区域.
+    /// </summary>
+    /// <param name="element">目标依赖对象.</param>
+    /// <returns>是否延伸.</returns>
+    public static bool GetExtendContentToNonClientArea(DependencyObject element)
+        => (bool)element.GetValue(ExtendContentToNonClientAreaProperty);
+}

@@ -1,0 +1,139 @@
+namespace BgControls.Tools.Converter;
+
+public enum CornerRadiusMode
+{
+    /// <summary>
+    /// 圆形模式
+    /// </summary>
+    Circle,
+
+    /// <summary>
+    /// 胶囊模式
+    /// </summary>
+    Capsule,
+
+    /// <summary>
+    /// 固定值
+    /// </summary>
+    Fixed,
+
+    /// <summary>
+    /// 百分比模式
+    /// </summary>
+    Percentage,
+
+    /// <summary>
+    /// 自定义四个角
+    /// </summary>
+    Custom
+}
+
+/// <summary>
+/// 圆角转换器，用于根据不同模式计算控件的圆角半径.
+/// </summary>
+[ValueConversion(typeof(object), typeof(CornerRadius))]
+public class CornerRadiusConverter : IMultiValueConverter
+{
+    /// <summary>
+    /// Gets or sets 圆角模式.
+    /// </summary>
+    public CornerRadiusMode Mode { get; set; } = CornerRadiusMode.Circle;
+
+    /// <summary>
+    /// Gets or sets 固定圆角半径.
+    /// </summary>
+    public double FixedRadius { get; set; } = 5;
+
+    /// <summary>
+    /// Gets or sets 百分比圆角半径.
+    /// </summary>
+    public double Percentage { get; set; } = 50;
+
+    /// <summary>
+    /// Gets or sets 自定义四个角的圆角半径.
+    /// </summary>
+    public CornerRadius CustomRadii { get; set; } = new CornerRadius(5);
+
+    /// <summary>
+    /// 根据模式和输入的宽高值计算圆角半径.
+    /// </summary>
+    /// <param name="values">宽度和高度.</param>
+    /// <param name="targetType">目标类型.</param>
+    /// <param name="parameter">参数.</param>
+    /// <param name="culture">区域信息.</param>
+    /// <returns>计算得到的圆角半径.</returns>
+    public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Length < 2 || values[0] == DependencyProperty.UnsetValue || values[1] == DependencyProperty.UnsetValue)
+        {
+            return new CornerRadius(0);
+        }
+
+        double actualWidth = System.Convert.ToDouble(values[0]);
+        double actualHeight = System.Convert.ToDouble(values[1]);
+
+        return Mode switch
+        {
+            CornerRadiusMode.Circle => CalculateCircle(actualWidth, actualHeight),
+            CornerRadiusMode.Capsule => CalculateCapsule(actualWidth, actualHeight),
+            CornerRadiusMode.Fixed => new CornerRadius(FixedRadius),
+            CornerRadiusMode.Percentage => CalculatePercentage(actualWidth, actualHeight),
+            CornerRadiusMode.Custom => CustomRadii,
+            _ => new CornerRadius(0)
+        };
+    }
+
+    /// <summary>
+    /// 计算圆形模式下的圆角半径.
+    /// </summary>
+    /// <param name="width">宽度.</param>
+    /// <param name="height">高度.</param>
+    /// <returns>圆角半径.</returns>
+    private CornerRadius CalculateCircle(double width, double height)
+    {
+        // 圆形半径取宽度和高度中的最小值的一半.
+        double radius = Math.Min(width, height) / 2;
+        return new CornerRadius(radius);
+    }
+
+    /// <summary>
+    /// 计算胶囊模式下的圆角半径.
+    /// </summary>
+    /// <param name="width">宽度.</param>
+    /// <param name="height">高度.</param>
+    /// <returns>圆角半径.</returns>
+    private CornerRadius CalculateCapsule(double width, double height)
+    {
+        // 胶囊形状：取高度的一半作为圆角半径.
+        double radius = height / 2;
+        return new CornerRadius(radius);
+    }
+
+    /// <summary>
+    /// 计算百分比模式下的圆角半径.
+    /// </summary>
+    /// <param name="width">宽度.</param>
+    /// <param name="height">高度.</param>
+    /// <returns>圆角半径.</returns>
+    private CornerRadius CalculatePercentage(double width, double height)
+    {
+        // 取宽度和高度中较小值的百分比作为半径.
+        double minDimension = Math.Min(width, height);
+        double radius = minDimension * (Percentage / 100);
+        return new CornerRadius(radius);
+    }
+
+    /// <summary>
+    /// 不支持的反向转换.
+    /// </summary>
+    /// <param name="value">值.</param>
+    /// <param name="targetTypes">目标类型数组.</param>
+    /// <param name="parameter">参数.</param>
+    /// <param name="culture">区域信息.</param>
+    /// <returns>无返回值.</returns>
+    /// <exception cref="NotImplementedException">始终抛出异常.</exception>
+    public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

@@ -1,0 +1,67 @@
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 为 Spin 事件提供数据.
+/// </summary>
+public class SpinEventArgs : RoutedEventArgs
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SpinEventArgs"/> class.
+    /// 使用指定的旋转方向初始化 SpinEventArgs 类的新实例.
+    /// </summary>
+    /// <param name="direction">旋转方向.</param>
+    public SpinEventArgs(SpinDirection direction)
+      : base()
+    {
+        this.Direction = direction;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SpinEventArgs"/> class.
+    /// 使用指定的路由事件和旋转方向初始化 SpinEventArgs 类的新实例.
+    /// </summary>
+    /// <param name="routedEvent">路由事件标识符.</param>
+    /// <param name="direction">旋转方向.</param>
+    public SpinEventArgs(RoutedEvent routedEvent, SpinDirection direction)
+      : base(routedEvent)
+    {
+        this.Direction = direction;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SpinEventArgs"/> class.
+    /// 使用指定的旋转方向和是否使用鼠标滚轮初始化 SpinEventArgs 类的新实例.
+    /// </summary>
+    /// <param name="direction">旋转方向.</param>
+    /// <param name="usingMouseWheel">是否使用鼠标滚轮.</param>
+    public SpinEventArgs(SpinDirection direction, bool usingMouseWheel)
+      : base()
+    {
+        this.Direction = direction;
+        this.UsingMouseWheel = usingMouseWheel;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SpinEventArgs"/> class.
+    /// 初始化 SpinEventArgs 类的新实例.
+    /// </summary>
+    /// <param name="routedEvent">路由事件标识符.</param>
+    /// <param name="direction">旋转方向.</param>
+    /// <param name="usingMouseWheel">是否使用鼠标滚轮.</param>
+    public SpinEventArgs(RoutedEvent routedEvent, SpinDirection direction, bool usingMouseWheel)
+      : base(routedEvent)
+    {
+        this.Direction = direction;
+        this.UsingMouseWheel = usingMouseWheel;
+    }
+
+    /// <summary>
+    /// Gets 旋转事件发生的方向.
+    /// </summary>
+    public SpinDirection Direction { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether 是否是通过鼠标滚轮发起的操作.
+    /// </summary>
+    public bool UsingMouseWheel { get; private set; }
+}

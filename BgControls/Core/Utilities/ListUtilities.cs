@@ -1,0 +1,85 @@
+namespace BgControls.Core.Utilities;
+
+internal static class ListUtilities
+{
+    internal static bool IsListOfItems(this Type? listType)
+    {
+        return GetListItemType(listType) != null;
+    }
+
+    internal static Type? GetListItemType(this Type? listType)
+    {
+        if (listType != null)
+        {
+            var type = (listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IList<>)) ?
+                listType :
+                listType.GetInterfaces().FirstOrDefault((Type i) => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>));
+            if (type != null)
+            {
+                return type.GetGenericArguments()[0];
+            }
+
+            if (listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                return listType.GetGenericArguments()[0];
+            }
+        }
+
+        return null;
+    }
+
+    internal static bool IsCollectionOfItems(this Type? colType)
+    {
+        return GetCollectionItemType(colType) != null;
+    }
+
+    internal static Type? GetCollectionItemType(this Type? colType)
+    {
+        if (colType != null)
+        {
+            Type? type = (!colType.IsGenericType || !(colType.GetGenericTypeDefinition() == typeof(ICollection<>))) ?
+            colType.GetInterfaces().FirstOrDefault((Type i) => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(ICollection<>)) :
+            colType;
+            if (type != null)
+            {
+                return type.GetGenericArguments()[0];
+            }
+        }
+
+        return null;
+    }
+
+    internal static bool IsDictionaryOfItems(this Type? dictType)
+    {
+        return GetDictionaryItemsType(dictType) != null;
+    }
+
+    internal static Type[]? GetDictionaryItemsType(this Type? dictType)
+    {
+        if (dictType != null)
+        {
+            if (dictType.IsGenericType && (dictType.GetGenericTypeDefinition() == typeof(Dictionary<,>) || dictType.GetGenericTypeDefinition() == typeof(IDictionary<,>)))
+            {
+                return new Type[]
+                {
+                dictType.GetGenericArguments()[0],
+                dictType.GetGenericArguments()[1],
+                };
+            }
+        }
+
+        return null;
+    }
+
+    internal static object? CreateEditableKeyValuePair(object? key, Type keyType, object? value, Type valueType)
+    {
+        return Activator.CreateInstance(CreateEditableKeyValuePairType(keyType, valueType), key, value);
+    }
+
+    internal static Type CreateEditableKeyValuePairType(Type keyType, Type valueType)
+    {
+        Type typeFromHandle = typeof(EditableKeyValuePair<,>);
+        Type[] typeArguments = new Type[] { keyType, valueType };
+        return typeFromHandle.MakeGenericType(typeArguments);
+    }
+}

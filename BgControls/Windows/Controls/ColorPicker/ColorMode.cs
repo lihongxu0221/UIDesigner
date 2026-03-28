@@ -1,0 +1,1 @@
+namespace BgControls.Windows.Controls;/// <summary>/// 表示颜色选择器的显示模式枚举./// </summary>public enum ColorMode{    /// <summary>    /// 调色板模式，通常显示预定义的标准颜色列表.    /// </summary>    ColorPalette,    /// <summary>    /// 颜色画布模式，允许用户通过坐标空间自由选择颜色.    /// </summary>    ColorCanvas,}

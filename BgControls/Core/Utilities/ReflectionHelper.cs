@@ -1,0 +1,253 @@
+using System.Linq.Expressions;
+
+namespace BgControls.Core.Utilities;
+
+/// <summary>
+/// 反射操作辅助类，提供属性验证、枚举描述提取、成员名称获取等反射相关工具方法.
+/// </summary>
+internal static class ReflectionHelper
+{
+    /// <summary>
+    /// 验证指定对象是否存在指定名称的公共属性（仅DEBUG模式生效）.
+    /// </summary>
+    /// <param name="sourceObject">要验证的目标对象（不可为null）.</param>
+    /// <param name="propertyName">要检查的公共属性名称（不可为null或空）.</param>
+    /// <exception cref="ArgumentNullException">当sourceObject或propertyName为null时抛出.</exception>
+    [Conditional("DEBUG")]
+    internal static void ValidatePublicPropertyName(object sourceObject, string propertyName)
+    {
+        ArgumentNullException.ThrowIfNull(sourceObject, nameof(sourceObject));
+        ArgumentNullException.ThrowIfNull(propertyName, nameof(propertyName));
+
+        Type type = sourceObject.GetType();
+
+        // 查找公共实例属性，支持扁平化继承层次（包含基类公共属性）
+        PropertyInfo? property = type.GetProperty(
+            propertyName,
+            BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Public);
+
+        Debug.Assert(
+            property != null,
+            string.Format("在类型 {1} 的对象上未找到公共属性 {0}.", propertyName, sourceObject.GetType().FullName));
+    }
+
+    /// <summary>
+    /// 验证指定对象是否存在指定名称的属性（含公共和非公共属性，仅DEBUG模式生效）.
+    /// </summary>
+    /// <param name="sourceObject">要验证的目标对象（不可为null）.</param>
+    /// <param name="propertyName">要检查的属性名称（不可为null或空）.</param>
+    /// <exception cref="ArgumentNullException">当sourceObject或propertyName为null时抛出.</exception>
+    [Conditional("DEBUG")]
+    internal static void ValidatePropertyName(object sourceObject, string propertyName)
+    {
+        ArgumentNullException.ThrowIfNull(sourceObject, nameof(sourceObject));
+        ArgumentNullException.ThrowIfNull(propertyName, nameof(propertyName));
+
+        Type type = sourceObject.GetType();
+
+        // 查找实例属性（含公共、非公共），支持扁平化继承层次
+        PropertyInfo? property = type.GetProperty(
+            propertyName,
+            BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.Public | BindingFlags.NonPublic);
+
+        Debug.Assert(
+            property != null,
+            string.Format("在类型 {1} 的对象上未找到属性 {0}（含公共和非公共）.", propertyName, sourceObject.GetType().FullName));
+    }
+
+    /// <summary>
+    /// 尝试从枚举值中提取 <see cref="DescriptionAttribute"/> 特性的描述文本.
+    /// </summary>
+    /// <param name="enumeration">要提取描述的枚举实例.</param>
+    /// <param name="description">输出参数，成功提取则返回描述文本，失败则返回空字符串.</param>
+    /// <returns>提取成功返回 true，失败（无该特性或反射异常）返回 false.</returns>
+    internal static bool TryGetEnumDescriptionAttributeValue(Enum enumeration, out string description)
+    {
+        try
+        {
+            // 获取枚举值对应的字段信息
+            FieldInfo? fieldInfo = enumeration.GetType().GetField(enumeration.ToString());
+
+            // 提取字段上的 DescriptionAttribute 特性（含继承的特性）
+            var attributes = fieldInfo?.GetCustomAttributes(typeof(DescriptionAttribute), true) as DescriptionAttribute[];
+            if ((attributes != null) && (attributes.Length > 0))
+            {
+                description = attributes[0].Description;
+                return true;
+            }
+        }
+        catch
+        {
+            // 捕获反射过程中的异常（如字段不存在、类型转换失败等），返回失败
+        }
+
+        description = string.Empty;
+        return false;
+    }
+
+    /// <summary>
+    /// 从成员表达式中获取属性或字段的名称（不跳过调试步骤）.
+    /// </summary>
+    /// <param name="expression">指向属性或字段的成员表达式（如 () => obj.Property）.</param>
+    /// <returns>属性或字段的名称.</returns>
+    /// <exception cref="InvalidOperationException">无法从表达式中提取名称时抛出.</exception>
+    [DebuggerStepThrough]
+    internal static string GetPropertyOrFieldName(MemberExpression expression)
+    {
+        if (!TryGetPropertyOrFieldName(expression, out var propertyOrFieldName))
+        {
+            throw new InvalidOperationException("无法获取属性或字段名称.");
+        }
+
+        return propertyOrFieldName;
+    }
+
+    /// <summary>
+    /// 从泛型函数表达式中获取属性或字段的名称（不跳过调试步骤）.
+    /// </summary>
+    /// <typeparam name="TMember">属性或字段的类型.</typeparam>
+    /// <param name="expression">指向属性或字段的泛型函数表达式（如 () => Property）.</param>
+    /// <returns>属性或字段的名称.</returns>
+    /// <exception cref="InvalidOperationException">无法从表达式中提取名称时抛出.</exception>
+    [DebuggerStepThrough]
+    internal static string GetPropertyOrFieldName<TMember>(Expression<Func<TMember>>? expression)
+    {
+        if (!TryGetPropertyOrFieldName(expression, out string propertyOrFieldName))
+        {
+            throw new InvalidOperationException("无法获取属性或字段名称.");
+        }
+
+        return propertyOrFieldName;
+    }
+
+    /// <summary>
+    /// 尝试从成员表达式中获取属性或字段的名称（不跳过调试步骤）.
+    /// </summary>
+    /// <param name="expression">指向属性或字段的成员表达式（如 () => obj.Property），可为null.</param>
+    /// <param name="propertyOrFieldName">输出参数，成功提取则返回名称，失败则返回空字符串.</param>
+    /// <returns>提取成功返回 true，失败（表达式为null或非成员表达式）返回 false.</returns>
+    [DebuggerStepThrough]
+    internal static bool TryGetPropertyOrFieldName(MemberExpression? expression, out string propertyOrFieldName)
+    {
+        propertyOrFieldName = string.Empty;
+        if (expression == null)
+        {
+            return false;
+        }
+
+        // 直接获取成员（属性/字段）的名称
+        propertyOrFieldName = expression.Member.Name;
+        return true;
+    }
+
+    /// <summary>
+    /// 尝试从泛型函数表达式中获取属性或字段的名称（不跳过调试步骤）.
+    /// </summary>
+    /// <typeparam name="TMember">属性或字段的类型.</typeparam>
+    /// <param name="expression">指向属性或字段的泛型函数表达式（如 () => Property），可为null.</param>
+    /// <param name="propertyOrFieldName">输出参数，成功提取则返回名称，失败则返回空字符串.</param>
+    /// <returns>提取成功返回 true，失败（表达式为null或无法转换为成员表达式）返回 false.</returns>
+    [DebuggerStepThrough]
+    internal static bool TryGetPropertyOrFieldName<TMember>(Expression<Func<TMember>>? expression, out string propertyOrFieldName)
+    {
+        propertyOrFieldName = string.Empty;
+        if (expression == null)
+        {
+            return false;
+        }
+
+        // 将表达式体转换为成员表达式，再提取名称
+        return TryGetPropertyOrFieldName(expression.Body as MemberExpression, out propertyOrFieldName);
+    }
+
+    /// <summary>
+    /// 判断指定类型是否包含指定名称的公共实例属性（支持扁平化继承层次）.
+    /// </summary>
+    /// <param name="type">要检查的目标类型.</param>
+    /// <param name="propertyName">要验证的属性名称.</param>
+    /// <returns>存在则返回 true，否则返回 false.</returns>
+    public static bool IsPublicInstanceProperty(Type type, string propertyName)
+    {
+        BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy;
+
+        // 检查类型是否包含指定名称的公共实例属性（含基类公共属性）
+        return type.GetProperty(propertyName, bindingAttr) != null;
+    }
+
+    /// <summary>
+    /// 获取对象的属性描述符集合.
+    /// </summary>
+    /// <param name="instance">要获取属性的对象实例.</param>
+    /// <param name="hideInheritedProperties">是否隐藏继承的属性 (即只显示当前类声明的属性).</param>
+    /// <returns>属性描述符列表 <see cref="List{PropertyDescriptor}"/>.</returns>
+    public static List<PropertyDescriptor> GetPropertyDescriptors(this object instance, bool hideInheritedProperties)
+    {
+        PropertyDescriptorCollection? descriptors = null;
+
+        // 1. 尝试获取实例的类型转换器 (TypeConverter)
+        TypeConverter tc = TypeDescriptor.GetConverter(instance);
+
+        // 如果没有转换器，或者转换器不支持获取属性 (例如 int, string 等简单类型通常不支持)
+        if (tc == null || !tc.GetPropertiesSupported())
+        {
+            // 2.1 检查是否实现了 ICustomTypeDescriptor 接口 (例如 DataRowView)
+            if (instance is ICustomTypeDescriptor customTypeDescriptor)
+            {
+                descriptors = customTypeDescriptor.GetProperties();
+            }
+
+            // 2.2 检查是否实现了 ICustomTypeProvider 接口 (通常用于 WCF RIA Services 或动态代理)
+            // 这里使用反射通过字符串名称查找接口，是为了避免对特定程序集的硬依赖
+            else if (instance.GetType().GetInterface("ICustomTypeProvider", true) != null)
+            {
+                var methodInfo = instance.GetType().GetMethod("GetCustomType");
+
+                // 调用 GetCustomType 方法获取真实的类型定义
+                var result = methodInfo?.Invoke(instance, null) as Type;
+                if (result != null)
+                {
+                    descriptors = TypeDescriptor.GetProperties(result);
+                }
+            }
+            else
+            {
+                // 2.3 默认情况：使用 TypeDescriptor 获取当前类型定义的标准属性
+                descriptors = TypeDescriptor.GetProperties(instance.GetType());
+            }
+        }
+        else
+        {
+            // 3. 如果 TypeConverter 支持获取属性，则使用它来获取
+            // (常用于 ExpandableObjectConverter 等场景)
+            try
+            {
+                descriptors = tc.GetProperties(instance);
+            }
+            catch (Exception)
+            {
+                // 忽略转换器内部可能抛出的异常，防止程序崩溃
+            }
+        }
+
+        // 4. 处理结果并进行过滤
+        if (descriptors != null)
+        {
+            var descriptorsProperties = descriptors.Cast<PropertyDescriptor>();
+
+            // 如果需要隐藏继承的属性
+            if (hideInheritedProperties)
+            {
+                // ComponentType 表示声明该属性的类型.
+                // 如果 ComponentType 等于 instance.GetType()，说明属性是在当前类中声明的，而不是基类.
+                var properties = from p in descriptorsProperties
+                                 where p.ComponentType == instance.GetType()
+                                 select p;
+                return properties.ToList();
+            }
+
+            return descriptorsProperties.ToList();
+        }
+
+        return new List<PropertyDescriptor>();
+    }
+}

@@ -1,0 +1,55 @@
+using BgControls.Tools.Converter;
+using BgControls.Windows.Controls.PropertyGrid;
+
+namespace BgControls.Windows.Controls.PropertyGrid.Editors;
+
+/// <summary>
+/// 数字输入编辑器.
+/// </summary>
+public class NumberInputEditor : TypeEditor<NumberInput>
+{
+    /// <inheritdoc/>
+    protected override NumberInput CreateEditor() => new PropertyGridEditorNumberInput();
+
+    /// <inheritdoc/>
+    protected override DependencyProperty SetValueDependencyProperty() => NumberInput.ValueProperty;
+
+    /// <inheritdoc/>
+    protected override UpdateSourceTrigger GetUpdateSourceTrigger(PropertyItem propertyItem) => UpdateSourceTrigger.PropertyChanged;
+
+    /// <inheritdoc/>
+    protected override IValueConverter? CreateValueConverter(PropertyItem propertyItem) => new Number2DoubleConverter();
+
+    /// <inheritdoc/>
+    protected override object? CreateConverterParameter(PropertyItem propertyItem)
+    {
+        return propertyItem.PropertyType;
+    }
+
+    /// <inheritdoc/>
+    protected override void SetControlProperties(PropertyItem propertyItem)
+    {
+        base.SetControlProperties(propertyItem);
+        if (this.Editor != null)
+        {
+            this.Editor.IsReadOnly = propertyItem.IsReadOnly;
+            this.Editor.DecimalPlaces = propertyItem.DecimalPlaces;
+            this.Editor.Increment = propertyItem.Increment ?? 1;
+            this.Editor.Maximum = propertyItem.Maximum;
+            this.Editor.Minimum = propertyItem.Minimum;
+        }
+    }
+}
+
+/// <summary>
+/// 数字输入控件.
+/// </summary>
+public class PropertyGridEditorNumberInput : NumberInput
+{
+    static PropertyGridEditorNumberInput()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(PropertyGridEditorNumberInput),
+            new FrameworkPropertyMetadata(typeof(PropertyGridEditorNumberInput)));
+    }
+}

@@ -1,0 +1,20 @@
+namespace BgControls.Windows.Attach;
+
+public static class TransitionAssist
+{
+    /// <summary>
+    /// Identifies the DisableTransitions attached dependency property.
+    /// </summary>
+    public static readonly DependencyProperty DisableTransitionsProperty = 
+        DependencyProperty.RegisterAttached("DisableTransitions", typeof(bool), typeof(TransitionAssist), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits));
+
+    public static void SetDisableTransitions(DependencyObject d, bool value)
+    {
+        d.SetValue(DisableTransitionsProperty, value);
+    }
+
+    public static bool GetDisableTransitions(DependencyObject d)
+    {
+        return (bool)d.GetValue(DisableTransitionsProperty);
+    }
+}

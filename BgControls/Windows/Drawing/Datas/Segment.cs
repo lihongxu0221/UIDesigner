@@ -1,0 +1,415 @@
+using BgControls.Core.Utilities;
+
+namespace BgControls.Windows.Drawing.Datas;
+
+/// <summary>
+/// 表示几何图形中的线段结构.
+/// </summary>
+internal struct Segment
+{
+    /// <summary>
+    /// 第一个端点是否被排除.
+    /// </summary>
+    private bool isP1Excluded;
+
+    /// <summary>
+    /// 第二个端点是否被排除.
+    /// </summary>
+    private bool isP2Excluded;
+
+    /// <summary>
+    /// 第一个端点坐标.
+    /// </summary>
+    private Point p1;
+
+    /// <summary>
+    /// 第二个端点坐标.
+    /// </summary>
+    private Point p2;
+
+    /// <summary>
+    /// Gets 空线段实例.
+    /// </summary>
+    public static Segment Empty
+    {
+        get
+        {
+            // 初始化一个点线段并标记两端排除.
+            Segment emptySegment = new Segment(new Point(0.0, 0.0));
+            emptySegment.isP1Excluded = true;
+            emptySegment.isP2Excluded = true;
+            return emptySegment;
+        }
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Segment"/> struct.
+    /// </summary>
+    /// <param name="point">线段退化成的点.</param>
+    public Segment(Point point)
+        : this(point, point, false, false)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Segment"/> struct.
+    /// </summary>
+    /// <param name="p1">第一个端点.</param>
+    /// <param name="p2">第二个端点.</param>
+    public Segment(Point p1, Point p2)
+        : this(p1, p2, false, false)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Segment"/> struct.
+    /// </summary>
+    /// <param name="p1">第一个端点.</param>
+    /// <param name="p2">第二个端点.</param>
+    /// <param name="excludeP1">是否排除第一个端点.</param>
+    /// <param name="excludeP2">是否排除第二个端点.</param>
+    public Segment(Point p1, Point p2, bool excludeP1, bool excludeP2)
+    {
+        // 初始化字段.
+        this.p1 = p1;
+        this.p2 = p2;
+        this.isP1Excluded = excludeP1;
+        this.isP2Excluded = excludeP2;
+    }
+
+    /// <summary>
+    /// Gets 第一个端点.
+    /// </summary>
+    public Point P1 => this.p1;
+
+    /// <summary>
+    /// Gets 第二个端点.
+    /// </summary>
+    public Point P2 => this.p2;
+
+    /// <summary>
+    /// Gets a value indicating whether 第一个端点是否被排除.
+    /// </summary>
+    public bool IsP1Excluded => this.isP1Excluded;
+
+    /// <summary>
+    /// Gets a value indicating whether 第二个端点是否被排除.
+    /// </summary>
+    public bool IsP2Excluded => this.isP2Excluded;
+
+    /// <summary>
+    /// Gets a value indicating whether 线段是否为空.
+    /// </summary>
+    public bool IsEmpty
+    {
+        get
+        {
+            // 如果两点几乎重合，则检查包含情况判定是否为空.
+            if (DoubleHelper.AreVirtuallyEqual(this.p1, this.p2))
+            {
+                if (!this.isP1Excluded)
+                {
+                    return this.isP2Excluded;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether 线段是否退化为一个点.
+    /// </summary>
+    public bool IsPoint => DoubleHelper.AreVirtuallyEqual(this.p1, this.p2);
+
+    /// <summary>
+    /// Gets 线段的长度.
+    /// </summary>
+    public double Length => (this.p2 - this.p1).Length;
+
+    /// <summary>
+    /// Gets 线段的斜率.
+    /// </summary>
+    public double Slope
+    {
+        get
+        {
+            // 避免除以零的情况.
+            if (this.p2.X != this.p1.X)
+            {
+                return (this.p2.Y - this.p1.Y) / (this.p2.X - this.p1.X);
+            }
+
+            return double.NaN;
+        }
+    }
+
+    /// <summary>
+    /// 判定线段是否包含指定的点.
+    /// </summary>
+    /// <param name="point">待检测的点.</param>
+    /// <returns>如果包含则返回 true.</returns>
+    public bool Contains(Point point)
+    {
+        // 空线段不包含任何点.
+        if (this.IsEmpty)
+        {
+            return false;
+        }
+
+        // 检查端点重合及排除逻辑.
+        if (DoubleHelper.AreVirtuallyEqual(this.p1, point))
+        {
+            return !this.isP1Excluded;
+        }
+
+        if (DoubleHelper.AreVirtuallyEqual(this.p2, point))
+        {
+            return !this.isP2Excluded;
+        }
+
+        bool isPointOnLine = false;
+        // 通过比较斜率确定点是否在直线上.
+        if (DoubleHelper.AreVirtuallyEqual(this.Slope, new Segment(this.p1, point).Slope))
+        {
+            // 检查坐标是否在端点范围内.
+            isPointOnLine = point.X >= Math.Min(this.p1.X, this.p2.X) &&
+                            point.X <= Math.Max(this.p1.X, this.p2.X) &&
+                            point.Y >= Math.Min(this.p1.Y, this.p2.Y) &&
+                            point.Y <= Math.Max(this.p1.Y, this.p2.Y);
+        }
+
+        return isPointOnLine;
+    }
+
+    /// <summary>
+    /// 判定当前线段是否包含另一条线段.
+    /// </summary>
+    /// <param name="segment">待检测的子线段.</param>
+    /// <returns>如果完全包含则返回 true.</returns>
+    public bool Contains(Segment segment)
+    {
+        // 通过求交集结果与自身对比来判定包含关系.
+        return segment == this.Intersection(segment);
+    }
+
+    /// <summary>
+    /// 判定对象是否相等.
+    /// </summary>
+    /// <param name="o">待比较的对象.</param>
+    /// <returns>如果相等则返回 true.</returns>
+    public override bool Equals(object o)
+    {
+        if (!(o is Segment otherSegment))
+        {
+            return false;
+        }
+
+        if (this.IsEmpty)
+        {
+            return otherSegment.IsEmpty;
+        }
+
+        // 检查正向匹配.
+        if (DoubleHelper.AreVirtuallyEqual(this.p1, otherSegment.p1))
+        {
+            if (DoubleHelper.AreVirtuallyEqual(this.p2, otherSegment.p2) &&
+                this.isP1Excluded == otherSegment.isP1Excluded)
+            {
+                return this.isP2Excluded == otherSegment.isP2Excluded;
+            }
+
+            return false;
+        }
+
+        // 检查反向匹配.
+        if (DoubleHelper.AreVirtuallyEqual(this.p1, otherSegment.p2) &&
+            DoubleHelper.AreVirtuallyEqual(this.p2, otherSegment.p1) &&
+            this.isP1Excluded == otherSegment.isP2Excluded)
+        {
+            return this.isP2Excluded == otherSegment.isP1Excluded;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 获取哈希码.
+    /// </summary>
+    /// <returns>哈希值.</returns>
+    public override int GetHashCode()
+    {
+        return this.p1.GetHashCode() ^ this.p2.GetHashCode() ^ this.isP1Excluded.GetHashCode() ^ this.isP2Excluded.GetHashCode();
+    }
+
+    /// <summary>
+    /// 计算两条线段的交集.
+    /// </summary>
+    /// <param name="segment">另一条线段.</param>
+    /// <returns>交叉后的线段实例.</returns>
+    public Segment Intersection(Segment segment)
+    {
+        // 任何一方为空，交集为空.
+        if (this.IsEmpty || segment.IsEmpty)
+        {
+            return Empty;
+        }
+
+        if (this == segment)
+        {
+            return new Segment(this.p1, this.p2, this.isP1Excluded, this.isP2Excluded);
+        }
+
+        // 处理退化为点的情况.
+        if (this.IsPoint)
+        {
+            if (!segment.Contains(this.p1))
+            {
+                return Empty;
+            }
+
+            return new Segment(this.p1);
+        }
+
+        if (segment.IsPoint)
+        {
+            if (!this.Contains(segment.p1))
+            {
+                return Empty;
+            }
+
+            return new Segment(segment.p1);
+        }
+
+        // 向量叉积法求交点.
+        Point pointBase = this.p1;
+        Vector vectorA = this.p2 - this.p1;
+        Point pointBaseB = segment.p1;
+        Vector vectorB = segment.p2 - segment.p1;
+        Vector vectorDist = pointBaseB - pointBase;
+        double crossProduct = Vector.CrossProduct(vectorA, vectorB);
+
+        // 如果不平行.
+        if (!DoubleHelper.AreVirtuallyEqual(this.Slope, segment.Slope))
+        {
+            double ratioB = Vector.CrossProduct(vectorDist, vectorA) / crossProduct;
+            if (ratioB < 0.0 || ratioB > 1.0)
+            {
+                return Empty;
+            }
+
+            double ratioA = Vector.CrossProduct(vectorDist, vectorB) / crossProduct;
+            if (ratioA < 0.0 || ratioA > 1.0)
+            {
+                return Empty;
+            }
+
+            return new Segment(pointBase + (ratioA * vectorA));
+        }
+
+        // 如果共线.
+        crossProduct = Vector.CrossProduct(vectorDist, vectorA);
+        if (crossProduct * crossProduct > 1E-06 * vectorA.LengthSquared * vectorDist.LengthSquared)
+        {
+            return Empty;
+        }
+
+        Segment resultIntersection = default(Segment);
+        Segment thisRaw = new Segment(this.p1, this.p2);
+        Segment otherRaw = new Segment(segment.p1, segment.p2);
+
+        bool isThisP1InOther = otherRaw.Contains(thisRaw.p1);
+        bool isThisP2InOther = otherRaw.Contains(thisRaw.p2);
+
+        if (isThisP1InOther && isThisP2InOther)
+        {
+            resultIntersection.p1 = this.p1;
+            resultIntersection.p2 = this.p2;
+            resultIntersection.isP1Excluded = this.isP1Excluded || !segment.Contains(this.p1);
+            resultIntersection.isP2Excluded = this.isP2Excluded || !segment.Contains(this.p2);
+            return resultIntersection;
+        }
+
+        bool isOtherP1InThis = thisRaw.Contains(otherRaw.p1);
+        bool isOtherP2InThis = thisRaw.Contains(otherRaw.p2);
+
+        if (isOtherP1InThis && isOtherP2InThis)
+        {
+            resultIntersection.p1 = segment.p1;
+            resultIntersection.p2 = segment.p2;
+            resultIntersection.isP1Excluded = segment.isP1Excluded || !this.Contains(segment.p1);
+            resultIntersection.isP2Excluded = segment.isP2Excluded || !this.Contains(segment.p2);
+            return resultIntersection;
+        }
+
+        // 处理部分重叠.
+        if (isThisP1InOther)
+        {
+            resultIntersection.p1 = this.p1;
+            resultIntersection.isP1Excluded = this.isP1Excluded || !segment.Contains(this.p1);
+        }
+        else
+        {
+            resultIntersection.p1 = this.p2;
+            resultIntersection.isP1Excluded = this.isP2Excluded || !segment.Contains(this.p2);
+        }
+
+        if (isOtherP1InThis)
+        {
+            resultIntersection.p2 = segment.p1;
+            resultIntersection.isP2Excluded = segment.isP1Excluded || !this.Contains(segment.p1);
+        }
+        else
+        {
+            resultIntersection.p2 = segment.p2;
+            resultIntersection.isP2Excluded = segment.isP2Excluded || !this.Contains(segment.p2);
+        }
+
+        return resultIntersection;
+    }
+
+    /// <summary>
+    /// 转换为描述线段的字符串.
+    /// </summary>
+    /// <returns>文本描述.</returns>
+    public override string ToString()
+    {
+        string baseString = base.ToString();
+        if (this.IsEmpty)
+        {
+            return baseString + ": {Empty}";
+        }
+
+        if (this.IsPoint)
+        {
+            return baseString + ", Point: " + this.p1.ToString();
+        }
+
+        return baseString + ": " + this.p1.ToString() + (this.isP1Excluded ? " (excl)" : " (incl)") + " to " + this.p2.ToString() + (this.isP2Excluded ? " (excl)" : " (incl)");
+    }
+
+    /// <summary>
+    /// 等于运算符重载.
+    /// </summary>
+    /// <param name="s1">第一个线段.</param>
+    /// <param name="s2">第二个线段.</param>
+    /// <returns>如果相等则返回 true.</returns>
+    public static bool operator ==(Segment s1, Segment s2)
+    {
+        // 对于 struct 类型，直接调用 Equals 即可.
+        return s1.Equals(s2);
+    }
+
+    /// <summary>
+    /// 不等于运算符重载.
+    /// </summary>
+    /// <param name="s1">第一个线段.</param>
+    /// <param name="s2">第二个线段.</param>
+    /// <returns>如果不相等则返回 true.</returns>
+    public static bool operator !=(Segment s1, Segment s2)
+    {
+        return !(s1 == s2);
+    }
+}

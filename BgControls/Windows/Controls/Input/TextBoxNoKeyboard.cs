@@ -1,0 +1,15 @@
+using System.Windows.Automation.Peers;
+
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// TextBoxNoKeyboard.cs .
+/// </summary>
+public class TextBoxNoKeyboard : TextBox
+{
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new FrameworkElementAutomationPeer(this);
+    }
+}

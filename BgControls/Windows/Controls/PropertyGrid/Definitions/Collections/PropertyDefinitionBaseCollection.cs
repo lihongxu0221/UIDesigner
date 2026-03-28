@@ -1,0 +1,88 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// PropertyDefinitionBaseCollection.
+/// </summary>
+/// <typeparam name="T">Property definition type.</typeparam>
+public abstract class PropertyDefinitionBaseCollection<T> : DefinitionCollectionBase<T>
+    where T : PropertyDefinitionBase
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PropertyDefinitionBaseCollection{T}"/> class.
+    /// </summary>
+    protected internal PropertyDefinitionBaseCollection()
+        : base()
+    {
+    }
+
+    /// <summary>
+    ///  Get property by propertyId.
+    /// </summary>
+    /// <param name="propertyId">property id.</param>
+    /// <returns>return find property.</returns>
+    public virtual T? this[object propertyId]
+    {
+        get
+        {
+            foreach (T item in this.Items)
+            {
+                if (item.TargetProperties.Contains(propertyId))
+                {
+                    return item;
+                }
+
+                List<string> stringTargetProperties = item.TargetProperties.OfType<string>().ToList();
+                if (stringTargetProperties != null && stringTargetProperties.Count > 0)
+                {
+                    if (propertyId is string stringPropertyID)
+                    {
+                        foreach (var targetPropertyString in stringTargetProperties)
+                        {
+                            if (targetPropertyString.Contains('*'))
+                            {
+                                string searchString = targetPropertyString.Replace("*", string.Empty);
+                                if (stringPropertyID.StartsWith(searchString) || stringPropertyID.EndsWith(searchString))
+                                {
+                                    return item;
+                                }
+                            }
+                        }
+                    }
+
+                    continue;
+                }
+
+                var type = propertyId as Type;
+                if (type != null)
+                {
+                    foreach (Type targetProperty in item.TargetProperties)
+                    {
+                        if (targetProperty.IsAssignableFrom(type))
+                        {
+                            return item;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Get property by recursive base types.
+    /// </summary>
+    /// <param name="type"> property type. </param>
+    /// <returns>return property base value.</returns>
+    protected internal T? GetRecursiveBaseTypes(Type? type)
+    {
+        T? val = null;
+        while (val == null && type != null)
+        {
+            val = this[type];
+            type = type.BaseType;
+        }
+
+        return val;
+    }
+}

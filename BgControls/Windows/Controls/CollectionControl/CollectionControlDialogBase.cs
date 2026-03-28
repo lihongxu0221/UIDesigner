@@ -1,0 +1,8 @@
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 集合编辑对话框基类.
+/// </summary>
+public partial class CollectionControlDialogBase : HandyControl.Controls.GlowWindow
+{
+}

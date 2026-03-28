@@ -1,0 +1,22 @@
+namespace BgControls.Windows.Datas;
+
+/// <summary>
+///  标题对齐方式.
+/// </summary>
+public enum TitlePlacementType
+{
+    /// <summary>
+    /// 无标题
+    /// </summary>
+    None,
+
+    /// <summary>
+    /// 左标题.
+    /// </summary>
+    Left,
+
+    /// <summary>
+    /// 上标题.
+    /// </summary>
+    Top,
+}

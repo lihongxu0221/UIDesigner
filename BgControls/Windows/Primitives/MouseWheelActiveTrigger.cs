@@ -1,0 +1,35 @@
+using BgCommon.Localization.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+
+namespace BgControls.Windows.Primitives;
+
+/// <summary>
+/// 指定鼠标滚轮何时处于活动状态的枚举.
+/// </summary>
+[TypeConverter(typeof(EnumLocalizationConverter))]
+public enum MouseWheelActiveTrigger
+{
+    /// <summary>
+    /// 仅当控件获得焦点时生效.
+    /// </summary>
+    [Display(Name = "获得焦点时生效")]
+    Focused,
+
+    /// <summary>
+    /// 当控件获得焦点且鼠标悬停在控件上时生效.
+    /// </summary>
+    [Display(Name = "获得焦点且鼠标悬停时生效")]
+    FocusedMouseOver,
+
+    /// <summary>
+    /// 当鼠标悬停在控件上时生效（无需焦点）.
+    /// </summary>
+    [Display(Name = "鼠标悬停时生效")]
+    MouseOver,
+
+    /// <summary>
+    /// 禁用鼠标滚轮.
+    /// </summary>
+    [Display(Name = "禁用鼠标滚轮")]
+    Disabled,
+}

@@ -1,0 +1,1 @@
+namespace Microsoft.Expression.Interactions;public enum TagType{    Element,    DataContext}

@@ -1,0 +1,1 @@
+namespace BgControls.Windows.Input.Touch;/// <summary>/// 指定滚动视图（ScrollViewer）的滑动模式枚举./// </summary>public enum ScrollViewerSwipeMode{    /// <summary>    /// 无滑动模式.    /// </summary>    None = 0,    /// <summary>    /// 仅在自身范围内处理滑动.    /// </summary>    Self,    /// <summary>    /// 将滑动逻辑冒泡至父级容器处理.    /// </summary>    Parent,}

@@ -1,0 +1,1 @@
+namespace BgControls.Windows.Input.Touch;/// <summary>/// 定义触控指示器的显示状态枚举./// </summary>internal enum TouchIndicatorState{    /// <summary>    /// 未定义状态.    /// </summary>    Undefined,    /// <summary>    /// 点击并按住状态.    /// </summary>    TapAndHold,    /// <summary>    /// 点击并移动状态.    /// </summary>    TapAndMove,}

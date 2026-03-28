@@ -1,0 +1,27 @@
+namespace BgControls;
+
+/// <summary>
+/// 提供 <see cref="Size"/> 结构的扩展方法.
+/// </summary>
+public static partial class Extensions
+{
+    /// <summary>
+    /// 对 <see cref="Size"/> 的宽度和高度执行四舍五入取整操作.
+    /// </summary>
+    /// <param name="size">要处理的尺寸对象.</param>
+    /// <returns>四舍五入后的新 <see cref="Size"/> 实例.</returns>
+    public static Size Round(this Size size)
+    {
+        return new Size(Math.Round(size.Width), Math.Round(size.Height));
+    }
+
+    /// <summary>
+    /// 交换 <see cref="Size"/> 结构的宽度和高度值.
+    /// </summary>
+    /// <param name="size">要处理的尺寸对象.</param>
+    /// <returns>宽度与高度交换后的新 <see cref="Size"/> 实例.</returns>
+    public static Size Swap(this Size size)
+    {
+        return new Size(size.Height, size.Width);
+    }
+}

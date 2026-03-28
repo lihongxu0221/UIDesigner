@@ -1,0 +1,45 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Attributes;
+
+/// <summary>
+/// Expanded category attribute.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
+public class ExpandedCategoryAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpandedCategoryAttribute"/> class.
+    /// </summary>
+    public ExpandedCategoryAttribute()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExpandedCategoryAttribute"/> class.
+    /// </summary>
+    /// <param name="categoryName"> category name.</param>
+    /// <param name="isExpanded">isExpanded.</param>
+    public ExpandedCategoryAttribute(string categoryName, bool isExpanded)
+        : this()
+    {
+        CategoryValue = categoryName;
+        IsExpanded = isExpanded;
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the category is expanded.
+    /// </summary>
+    public bool IsExpanded { get; set; }
+
+    /// <summary>
+    /// Gets the category name.
+    /// </summary>
+    public virtual string Category => this.CategoryValue;
+
+    /// <summary>
+    /// Gets the category value.
+    /// </summary>
+    public string CategoryValue { get; private set; } = string.Empty;
+
+    /// <inheritdoc/>
+    public override object TypeId => CategoryValue;
+}

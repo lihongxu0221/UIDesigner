@@ -1,0 +1,192 @@
+using BgControls.Windows.Automation.Peers;
+using BgControls.Windows.Controls.PropertyGrid;
+using System.Windows.Automation.Peers;
+
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 提供一个包含集合编辑器的按钮.
+/// </summary>
+public class CollectionControlButton : Button
+{
+    /// <summary>
+    /// 标识 EditorDefinitions 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty EditorDefinitionsProperty =
+        DependencyProperty.Register("EditorDefinitions", typeof(EditorDefinitionCollection), typeof(CollectionControlButton), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// 标识 IsReadOnly 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty IsReadOnlyProperty =
+        DependencyProperty.Register("IsReadOnly", typeof(bool), typeof(CollectionControlButton), new UIPropertyMetadata(false));
+
+    /// <summary>
+    /// 标识 ItemsSource 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty ItemsSourceProperty =
+        DependencyProperty.Register("ItemsSource", typeof(IEnumerable), typeof(CollectionControlButton), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// 标识 ItemsSourceType 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty ItemsSourceTypeProperty =
+        DependencyProperty.Register("ItemsSourceType", typeof(Type), typeof(CollectionControlButton), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// 标识 NewItemTypes 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty NewItemTypesProperty =
+        DependencyProperty.Register("NewItemTypes", typeof(IList), typeof(CollectionControlButton), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// CollectionUpdated 路由事件.
+    /// </summary>
+    public static readonly RoutedEvent CollectionUpdatedEvent =
+        EventManager.RegisterRoutedEvent("CollectionUpdated", RoutingStrategy.Bubble, typeof(EventHandler), typeof(CollectionControlButton));
+
+    static CollectionControlButton()
+    {
+        FrameworkElement.DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(CollectionControlButton),
+            new FrameworkPropertyMetadata(typeof(CollectionControlButton)));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CollectionControlButton"/> class.
+    /// </summary>
+    public CollectionControlButton()
+    {
+        this.Click += CollectionControlButton_Click;
+    }
+
+    /// <summary>
+    /// Gets or sets  CollectionControl 中 PropertyGrid 的自定义编辑器.
+    /// </summary>
+    public EditorDefinitionCollection EditorDefinitions
+    {
+        get
+        {
+            return (EditorDefinitionCollection)GetValue(EditorDefinitionsProperty);
+        }
+
+        set
+        {
+            SetValue(EditorDefinitionsProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether gets or sets 一个值，该值指示 CollectionControlButton 是否为只读.
+    /// </summary>
+    public bool IsReadOnly
+    {
+        get
+        {
+            return (bool)GetValue(IsReadOnlyProperty);
+        }
+
+        set
+        {
+            SetValue(IsReadOnlyProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets 用于生成 CollectionControl 内容的列表.
+    /// </summary>
+    public IEnumerable ItemsSource
+    {
+        get
+        {
+            return (IEnumerable)GetValue(ItemsSourceProperty);
+        }
+
+        set
+        {
+            SetValue(ItemsSourceProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets  ItemsSource 的类型.
+    /// </summary>
+    public Type ItemsSourceType
+    {
+        get
+        {
+            return (Type)GetValue(ItemsSourceTypeProperty);
+        }
+
+        set
+        {
+            SetValue(ItemsSourceTypeProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// Gets or sets 显示在添加下拉框中的自定义项类型列表.
+    /// </summary>
+    public IList<Type> NewItemTypes
+    {
+        get
+        {
+            return (IList<Type>)GetValue(NewItemTypesProperty);
+        }
+
+        set
+        {
+            SetValue(NewItemTypesProperty, value);
+        }
+    }
+
+    /// <summary>
+    /// 当集合中的项被添加、移除、移动或修改时引发.
+    /// </summary>
+    public event RoutedEventHandler CollectionUpdated
+    {
+        add
+        {
+            AddHandler(CollectionUpdatedEvent, value);
+        }
+
+        remove
+        {
+            RemoveHandler(CollectionUpdatedEvent, value);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new GenericAutomationPeer(this);
+    }
+
+    /// <summary>
+    /// 处理按钮点击事件.
+    /// </summary>
+    /// <param name="sender">事件源.</param>
+    /// <param name="e">事件参数.</param>
+    private void CollectionControlButton_Click(object sender, RoutedEventArgs e)
+    {
+        CollectionControlDialog collectionControlDialog = new CollectionControlDialog();
+        collectionControlDialog.NewItemTypes = NewItemTypes;
+        collectionControlDialog.ItemsSourceType = ItemsSourceType;
+        collectionControlDialog.IsReadOnly = IsReadOnly;
+        collectionControlDialog.EditorDefinitions = EditorDefinitions;
+        BindingOperations.SetBinding(
+            collectionControlDialog,
+            CollectionControlDialog.ItemsSourceProperty,
+            new Binding("ItemsSource")
+            {
+                Source = this,
+                Mode = BindingMode.TwoWay,
+            });
+
+        bool? dialogResult = collectionControlDialog.ShowDialog();
+        if (dialogResult.HasValue && dialogResult.Value)
+        {
+            this.RaiseEvent(new RoutedEventArgs(CollectionUpdatedEvent, this));
+        }
+    }
+}

@@ -1,0 +1,14 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// Represents a collection of EditorDefinition instances.
+/// </summary>
+public class EditorDefinitionCollection : PropertyDefinitionBaseCollection<EditorDefinitionBase>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EditorDefinitionCollection"/> class.
+    /// </summary>
+    public EditorDefinitionCollection()
+    {
+    }
+}

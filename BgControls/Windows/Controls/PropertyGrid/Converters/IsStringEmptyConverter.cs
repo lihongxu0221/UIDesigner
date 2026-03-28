@@ -1,0 +1,24 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Converters;
+
+/// <summary>
+/// 字符串是否为空转换器.
+/// </summary>
+public class IsStringEmptyConverter : IValueConverter
+{
+    /// <inheritdoc/>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is string)
+        {
+            return string.IsNullOrEmpty((string)value);
+        }
+
+        return false;
+    }
+
+    /// <inheritdoc/>
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

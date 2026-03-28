@@ -1,0 +1,36 @@
+using BgControls.Windows.Datas;
+
+namespace BgControls.Windows;
+
+/// <summary>
+/// 定义一个委托，用于处理 FileDoubleClick 事件.
+/// </summary>
+public delegate void FileDoubleClickHandler(object sender, FileDoubleClickEventArgs e);
+
+/// <summary>
+/// 为 FileDoubleClickEvent 提供事件数据.
+/// </summary>
+public class FileDoubleClickEventArgs : MouseButtonEventArgs
+{
+    /// <summary>
+    /// Gets 获取被双击的文件或文件夹项.
+    /// </summary>
+    public FileSystemItemInfo Item { get; }
+
+    public FileDoubleClickEventArgs(RoutedEvent routedEvent, object source, MouseButtonEventArgs e, FileSystemItemInfo item)
+        : base(e.MouseDevice, e.Timestamp, e.ChangedButton, e.StylusDevice)
+    {
+        this.Item = item;
+        this.RoutedEvent = routedEvent;
+        this.Source = source;
+    }
+
+    protected override void InvokeEventHandler(Delegate genericHandler, object genericTarget)
+    {
+        var handler = genericHandler as FileDoubleClickHandler;
+        if (handler != null)
+        {
+            handler.Invoke(genericHandler, this);
+        }
+    }
+}

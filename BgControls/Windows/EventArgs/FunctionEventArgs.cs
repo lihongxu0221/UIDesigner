@@ -1,0 +1,42 @@
+namespace BgControls.Windows;
+
+/// <summary>
+/// 通用泛型路由事件参数类.
+/// </summary>
+/// <typeparam name="T">事件携带的数据类型.</typeparam>
+/// <remarks>
+/// <para>
+/// 这是一个通用的 <see cref="RoutedEventArgs"/> 包装器，用于在触发路由事件时传递自定义的数据负载 (<see cref="Info"/>).
+/// </para>
+/// <para>
+/// 相比于为每个事件单独定义 EventArgs 类，使用此泛型类可以减少样板代码.
+/// </para>
+/// </remarks>
+public class FunctionEventArgs<T> : RoutedEventArgs
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FunctionEventArgs{T}"/> class.
+    /// </summary>
+    /// <param name="info">事件携带的数据.</param>
+    public FunctionEventArgs(T info)
+    {
+        this.Info = info;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="FunctionEventArgs{T}"/> class.
+    /// </summary>
+    /// <param name="routedEvent">路由事件标识符.</param>
+    /// <param name="source">事件源对象.</param>
+    /// <param name="info">事件携带的数据.</param>
+    public FunctionEventArgs(RoutedEvent routedEvent, object source, T info)
+        : base(routedEvent, source)
+    {
+        this.Info = info;
+    }
+
+    /// <summary>
+    /// Gets 事件携带的数据信息.
+    /// </summary>
+    public T Info { get; }
+}

@@ -1,0 +1,50 @@
+using BgControls.Windows.Automation.Peers;
+using BgControls.Windows.Primitives;
+using System.Windows.Automation.Peers;
+
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// Represents a ListBox control whose items are preceded by a CheckBox.
+/// </summary>
+public class CheckListBox : SelectAllSelector
+{
+    static CheckListBox()
+    {
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(CheckListBox), new FrameworkPropertyMetadata(typeof(CheckListBox)));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CheckListBox"/> class.
+    /// </summary>
+    public CheckListBox()
+    {
+    }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new ListBoxAutomationPeer(this);
+    }
+}
+
+/// <summary>
+/// The AutomationPeer class used for ListBoxes in the Toolkit.
+/// </summary>
+public class ListBoxAutomationPeer : GenericAutomationPeer
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ListBoxAutomationPeer"/> class.
+    /// </summary>
+    /// <param name="owner">owner.</param>
+    public ListBoxAutomationPeer(ItemsControl owner)
+        : base(owner)
+    {
+    }
+
+    /// <inheritdoc/>
+    protected override AutomationControlType GetAutomationControlTypeCore()
+    {
+        return AutomationControlType.List;
+    }
+}

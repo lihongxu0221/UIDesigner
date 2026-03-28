@@ -1,0 +1,39 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BgControls.Windows.Controls.PropertyGrid.Editors;
+
+/// <summary>
+/// 布尔值类型编辑器，为 PropertyGrid（属性网格）中的布尔类型属性提供复选框（CheckBox）编辑控件.
+/// </summary>
+/// <remarks>
+/// 1. 继承自 PropertyGrid 编辑器基类 <see cref="TypeEditor{T}"/>（T 为 CheckBox），天然适配 PropertyGrid 编辑体系；
+/// 2. 专门用于布尔（bool）类型属性的编辑，通过复选框的勾选/未勾选状态直接映射属性的 true/false 值，交互直观；
+/// 3. 自动适配属性的只读状态（通过基类 <see cref="TypeEditor{T}"/> 的绑定逻辑）：属性为只读时，复选框禁用（IsEnabled = false）；
+/// 4. 无需手动输入，通过控件状态与属性值双向同步，避免输入错误，提升布尔类型属性的编辑效率；
+/// 5. 可通过重写基类方法（如 <see cref="TypeEditor{T}.SetControlProperties(PropertyItem)"/>）扩展控件行为（如设置复选框文本、tooltip 等）.
+/// </remarks>
+public class CheckBoxEditor : TypeEditor<CheckBox>
+{
+    /// <inheritdoc/>
+    protected override CheckBox CreateEditor() => new PropertyGridEditorCheckBox();
+
+    /// <inheritdoc/>
+    protected override DependencyProperty SetValueDependencyProperty() => CheckBox.IsCheckedProperty;
+}
+
+/// <summary>
+/// 属性网格编辑器复选框.
+/// </summary>
+public class PropertyGridEditorCheckBox : CheckBox
+{
+    static PropertyGridEditorCheckBox()
+    {
+        FrameworkElement.DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(PropertyGridEditorCheckBox),
+            new FrameworkPropertyMetadata(typeof(PropertyGridEditorCheckBox)));
+    }
+}

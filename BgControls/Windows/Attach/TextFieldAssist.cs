@@ -1,0 +1,221 @@
+using BgControls.Windows.Theme;
+
+namespace BgControls.Windows.Attach;
+
+public static class TextFieldAssist
+{
+    public static readonly DependencyProperty TextBoxViewMarginProperty =
+        DependencyProperty.RegisterAttached("TextBoxViewMargin", typeof(Thickness), typeof(TextFieldAssist), new FrameworkPropertyMetadata(new Thickness(double.NegativeInfinity), FrameworkPropertyMetadataOptions.Inherits, TextBoxViewMarginPropertyChangedCallback));
+
+    public static readonly DependencyProperty DecorationVisibilityProperty =
+        DependencyProperty.RegisterAttached("DecorationVisibility", typeof(Visibility), typeof(TextFieldAssist), new PropertyMetadata(Visibility.Visible));
+
+    public static readonly DependencyProperty HasTextFieldBoxProperty =
+        DependencyProperty.RegisterAttached("HasTextFieldBox", typeof(bool), typeof(TextFieldAssist), new PropertyMetadata(false));
+
+    public static readonly DependencyProperty HasTextAreaBoxProperty =
+        DependencyProperty.RegisterAttached("HasTextAreaBox", typeof(bool), typeof(TextFieldAssist), new PropertyMetadata(false));
+
+    public static readonly DependencyProperty IncludeSpellingSuggestionsProperty =
+        DependencyProperty.RegisterAttached("IncludeSpellingSuggestions", typeof(bool), typeof(TextFieldAssist), new PropertyMetadata(false, IncludeSpellingSuggestionsChanged));
+
+    public static void SetTextBoxViewMargin(DependencyObject element, Thickness value)
+    {
+        element.SetValue(TextBoxViewMarginProperty, value);
+    }
+
+    public static Thickness GetTextBoxViewMargin(DependencyObject element)
+    {
+        return (Thickness)element.GetValue(TextBoxViewMarginProperty);
+    }
+
+    public static void SetDecorationVisibility(DependencyObject element, Visibility value)
+    {
+        element.SetValue(DecorationVisibilityProperty, value);
+    }
+
+    public static Visibility GetDecorationVisibility(DependencyObject element)
+    {
+        return (Visibility)element.GetValue(DecorationVisibilityProperty);
+    }
+
+    public static void SetHasTextFieldBox(DependencyObject element, bool value)
+    {
+        element.SetValue(HasTextFieldBoxProperty, value);
+    }
+
+    public static bool GetHasTextFieldBox(DependencyObject element)
+    {
+        return (bool)element.GetValue(HasTextFieldBoxProperty);
+    }
+
+    public static void SetHasTextAreaBox(DependencyObject element, bool value)
+    {
+        element.SetValue(HasTextAreaBoxProperty, value);
+    }
+
+    public static bool GetHasTextAreaBox(DependencyObject element)
+    {
+        return (bool)element.GetValue(HasTextAreaBoxProperty);
+    }
+
+    public static void SetIncludeSpellingSuggestions(TextBoxBase element, bool value)
+    {
+        element.SetValue(IncludeSpellingSuggestionsProperty, value);
+    }
+
+    public static bool GetIncludeSpellingSuggestions(TextBoxBase element)
+    {
+        return (bool)element.GetValue(IncludeSpellingSuggestionsProperty);
+    }
+
+    private static void IncludeSpellingSuggestionsChanged(DependencyObject element, DependencyPropertyChangedEventArgs e)
+    {
+        if (element is TextBoxBase textBoxBase)
+        {
+            if ((bool)e.NewValue)
+            {
+                textBoxBase.ContextMenuOpening += TextBoxOnContextMenuOpening;
+                textBoxBase.ContextMenuClosing += TextBoxOnContextMenuClosing;
+            }
+            else
+            {
+                textBoxBase.ContextMenuOpening -= TextBoxOnContextMenuOpening;
+                textBoxBase.ContextMenuClosing -= TextBoxOnContextMenuClosing;
+            }
+        }
+    }
+
+    private static void TextBoxOnContextMenuOpening(object sender, ContextMenuEventArgs e)
+    {
+        var textBoxBase = sender as TextBoxBase;
+        var contextMenu = textBoxBase?.ContextMenu;
+        if (contextMenu == null)
+        {
+            return;
+        }
+
+        RemoveSpellingSuggestions(contextMenu);
+        if (!SpellCheck.GetIsEnabled(textBoxBase))
+        {
+            return;
+        }
+
+        var spellingError = GetSpellingError(textBoxBase);
+        if (spellingError == null)
+        {
+            return;
+        }
+
+        var style = contextMenu.TryFindResource(Spelling.SuggestionMenuItemStyleKey) as Style;
+        int insertIndex = 0;
+        bool flag = false;
+        foreach (string suggestion in spellingError.Suggestions)
+        {
+            flag = true;
+            MenuItem insertItem = new MenuItem
+            {
+                CommandTarget = textBoxBase,
+                Command = EditingCommands.CorrectSpellingError,
+                CommandParameter = suggestion,
+                Style = style,
+                Tag = typeof(Spelling),
+            };
+            contextMenu.Items.Insert(insertIndex++, insertItem);
+        }
+
+        if (!flag)
+        {
+            contextMenu.Items.Insert(insertIndex++, new MenuItem
+            {
+                Style = contextMenu.TryFindResource(Spelling.NoSuggestionsMenuItemStyleKey) as Style,
+                Tag = typeof(Spelling),
+            });
+        }
+
+        contextMenu.Items.Insert(insertIndex++, new Separator
+        {
+            Style = contextMenu.TryFindResource(Spelling.SeparatorStyleKey) as Style,
+            Tag = typeof(Spelling),
+        });
+
+        contextMenu.Items.Insert(insertIndex++, new MenuItem
+        {
+            Command = EditingCommands.IgnoreSpellingError,
+            CommandTarget = textBoxBase,
+            Style = contextMenu.TryFindResource(Spelling.IgnoreAllMenuItemStyleKey) as Style,
+            Tag = typeof(Spelling),
+        });
+
+        contextMenu.Items.Insert(insertIndex, new Separator
+        {
+            Style = contextMenu.TryFindResource(Spelling.SeparatorStyleKey) as Style,
+            Tag = typeof(Spelling),
+        });
+    }
+
+    private static SpellingError? GetSpellingError(TextBoxBase textBoxBase)
+    {
+        if (textBoxBase is TextBox textBox)
+        {
+            return textBox.GetSpellingError(textBox.CaretIndex);
+        }
+
+        if (textBoxBase is RichTextBox richTextBox)
+        {
+            return richTextBox.GetSpellingError(richTextBox.CaretPosition);
+        }
+
+        return null;
+    }
+
+    private static void TextBoxOnContextMenuClosing(object sender, ContextMenuEventArgs e)
+    {
+        var contextMenu = (sender as TextBoxBase)?.ContextMenu;
+        if (contextMenu != null)
+        {
+            RemoveSpellingSuggestions(contextMenu);
+        }
+    }
+
+    private static void RemoveSpellingSuggestions(ContextMenu menu)
+    {
+        foreach (FrameworkElement item in (from item in menu.Items.OfType<FrameworkElement>()
+                                           where item.Tag == typeof(Spelling)
+                                           select item).ToList())
+        {
+            menu.Items.Remove(item);
+        }
+    }
+
+    private static void ApplyTextBoxViewMargin(Control textBox, Thickness margin)
+    {
+        if (!margin.Equals(new Thickness(double.NegativeInfinity)))
+        {
+            var frameworkElement = textBox.Template != null ?
+                (textBox.Template.FindName("PART_ContentHost", textBox) as ScrollViewer)?.Content as FrameworkElement :
+                null;
+            if (frameworkElement != null)
+            {
+                frameworkElement.Margin = margin;
+            }
+        }
+    }
+
+    private static void TextBoxViewMarginPropertyChangedCallback(DependencyObject dependencyObject, DependencyPropertyChangedEventArgs dependencyPropertyChangedEventArgs)
+    {
+        if (dependencyObject is Control control)
+        {
+            if (control.IsLoaded)
+            {
+                ApplyTextBoxViewMargin(control, (Thickness)dependencyPropertyChangedEventArgs.NewValue);
+            }
+
+            control.Loaded += (sender, args) =>
+            {
+                Control obj = (Control)sender;
+                ApplyTextBoxViewMargin(obj, GetTextBoxViewMargin(obj));
+            };
+        }
+    }
+}

@@ -1,0 +1,40 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// Definition collection.
+/// </summary>
+/// <typeparam name="T">Definition type.</typeparam>
+public abstract class DefinitionCollectionBase<T> : ObservableCollection<T>
+    where T : DefinitionBase
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefinitionCollectionBase{T}"/> class.
+    /// </summary>
+    protected internal DefinitionCollectionBase()
+    {
+    }
+
+    /// <inheritdoc/>
+    protected override void InsertItem(int index, T item)
+    {
+        if (item == null)
+        {
+            throw new InvalidOperationException("Cannot insert null items in the collection.");
+        }
+
+        item.Lock();
+        base.InsertItem(index, item);
+    }
+
+    /// <inheritdoc/>
+    protected override void SetItem(int index, T item)
+    {
+        if (item == null)
+        {
+            throw new InvalidOperationException("Cannot insert null items in the collection.");
+        }
+
+        item.Lock();
+        base.SetItem(index, item);
+    }
+}

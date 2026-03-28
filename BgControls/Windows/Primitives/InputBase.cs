@@ -1,0 +1,298 @@
+namespace BgControls.Windows.Primitives;
+
+/// <summary>
+/// 接收输入的控件基类.
+/// </summary>
+public abstract class InputBase : Control
+{
+    #region Properties
+
+    #region CornerRadius
+
+    /// <summary>
+    /// 标识 CornerRadius 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty CornerRadiusProperty =
+        DependencyProperty.Register("CornerRadius", typeof(CornerRadius), typeof(InputBase), new UIPropertyMetadata(default(CornerRadius), OnCornerRadiusPropertyChanged));
+
+    /// <summary>
+    /// Gets or sets 控件的圆角半径.
+    /// </summary>
+    public CornerRadius CornerRadius
+    {
+        get { return (CornerRadius)GetValue(CornerRadiusProperty); }
+        set { SetValue(CornerRadiusProperty, value); }
+    }
+
+    /// <summary>
+    /// 当 CornerRadius 更改时调用.
+    /// </summary>
+    /// <param name="oldValue">旧值.</param>
+    /// <param name="newValue">新值.</param>
+    protected virtual void OnCornerRadiusChanged(CornerRadius oldValue, CornerRadius newValue)
+    {
+    }
+
+    private static void OnCornerRadiusPropertyChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is InputBase inputBase)
+        {
+            inputBase.OnCornerRadiusChanged((CornerRadius)e.OldValue, (CornerRadius)e.NewValue);
+        }
+    }
+
+    #endregion
+
+    #region AllowTextInput
+
+    /// <summary>
+    /// 标识 AllowTextInput 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty AllowTextInputProperty =
+        DependencyProperty.Register("AllowTextInput", typeof(bool), typeof(InputBase), new UIPropertyMetadata(true, OnAllowTextInputChanged));
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 该值确定控件的可编辑部分是否可以编辑. 可编辑部分不包括按钮或调节钮，通常是文本部分.
+    /// </summary>
+    public bool AllowTextInput
+    {
+        get { return (bool)GetValue(AllowTextInputProperty); }
+        set { SetValue(AllowTextInputProperty, value); }
+    }
+
+    /// <summary>
+    /// 当 AllowTextInput 更改时调用.
+    /// </summary>
+    /// <param name="oldValue">旧值.</param>
+    /// <param name="newValue">新值.</param>
+    protected virtual void OnAllowTextInputChanged(bool oldValue, bool newValue)
+    {
+    }
+
+    private static void OnAllowTextInputChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is InputBase inputBase)
+        {
+            inputBase.OnAllowTextInputChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+    }
+    #endregion
+
+    #region CultureInfo
+
+    /// <summary>
+    /// 标识 CultureInfo 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty CultureInfoProperty =
+        DependencyProperty.Register("CultureInfo", typeof(CultureInfo), typeof(InputBase), new UIPropertyMetadata(CultureInfo.CurrentCulture, OnCultureInfoChanged));
+
+    /// <summary>
+    /// Gets or sets 输入控件的文化信息(CultureInfo).
+    /// </summary>
+    public CultureInfo CultureInfo
+    {
+        get { return (CultureInfo)GetValue(CultureInfoProperty); }
+        set { SetValue(CultureInfoProperty, value); }
+    }
+
+    /// <summary>
+    /// 当 CultureInfo 更改时调用.
+    /// </summary>
+    /// <param name="oldValue">旧值.</param>
+    /// <param name="newValue">新值.</param>
+    protected virtual void OnCultureInfoChanged(CultureInfo oldValue, CultureInfo newValue)
+    {
+    }
+
+    private static void OnCultureInfoChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is InputBase inputBase)
+        {
+            inputBase.OnCultureInfoChanged((CultureInfo)e.OldValue, (CultureInfo)e.NewValue);
+        }
+    }
+    #endregion
+
+    #region IsReadOnly
+
+    /// <summary>
+    /// 标识 IsReadOnly 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty IsReadOnlyProperty =
+        DependencyProperty.Register("IsReadOnly", typeof(bool), typeof(InputBase), new UIPropertyMetadata(false, OnReadOnlyChanged));
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 一个值，该值指示输入控件是否为只读.
+    /// </summary>
+    public bool IsReadOnly
+    {
+        get { return (bool)GetValue(IsReadOnlyProperty); }
+        set { SetValue(IsReadOnlyProperty, value); }
+    }
+
+    /// <summary>
+    /// 当 IsReadOnly 更改时调用.
+    /// </summary>
+    /// <param name="oldValue">旧值.</param>
+    /// <param name="newValue">新值.</param>
+    protected virtual void OnReadOnlyChanged(bool oldValue, bool newValue)
+    {
+    }
+
+    private static void OnReadOnlyChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is InputBase inputBase)
+        {
+            inputBase.OnReadOnlyChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+    }
+    #endregion
+
+    #region IsUndoEnabled
+
+    /// <summary>
+    /// 标识 IsUndoEnabled 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty IsUndoEnabledProperty =
+        DependencyProperty.Register("IsUndoEnabled", typeof(bool), typeof(InputBase), new UIPropertyMetadata(true, OnIsUndoEnabledChanged));
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 是否启用撤消功能.
+    /// </summary>
+    public bool IsUndoEnabled
+    {
+        get { return (bool)GetValue(IsUndoEnabledProperty); }
+        set { SetValue(IsUndoEnabledProperty, value); }
+    }
+
+    /// <summary>
+    /// 当 IsUndoEnabled 更改时调用.
+    /// </summary>
+    /// <param name="oldValue">旧值.</param>
+    /// <param name="newValue">新值.</param>
+    protected virtual void OnIsUndoEnabledChanged(bool oldValue, bool newValue)
+    {
+    }
+
+    private static void OnIsUndoEnabledChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is InputBase inputBase)
+        {
+            inputBase.OnIsUndoEnabledChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+    }
+    #endregion
+
+    #region CaretBrush
+
+    /// <summary>
+    /// 标识 CaretBrush 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty CaretBrushProperty =
+        DependencyProperty.Register("CaretBrush", typeof(Brush), typeof(InputBase), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// Gets or sets 光标画笔的颜色.
+    /// </summary>
+    public Brush CaretBrush
+    {
+        get { return (Brush)GetValue(CaretBrushProperty); }
+        set { SetValue(CaretBrushProperty, value); }
+    }
+
+    #endregion
+
+    #region Text
+
+    /// <summary>
+    /// 标识 Text 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty TextProperty =
+        DependencyProperty.Register("Text", typeof(string), typeof(InputBase), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnTextChanged, null, isAnimationProhibited: false, UpdateSourceTrigger.LostFocus));
+
+    /// <summary>
+    /// Gets or sets 输入控件值的格式化字符串表示形式.
+    /// </summary>
+    public string Text
+    {
+        get { return (string)GetValue(TextProperty); }
+        set { SetValue(TextProperty, value); }
+    }
+
+    /// <summary>
+    /// 当输入控件的文本更改时调用.
+    /// </summary>
+    /// <param name="oldValue">旧值.</param>
+    /// <param name="newValue">新值.</param>
+    protected virtual void OnTextChanged(string oldValue, string newValue)
+    {
+    }
+
+    private static void OnTextChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is InputBase inputBase)
+        {
+            inputBase.OnTextChanged((string)e.OldValue, (string)e.NewValue);
+        }
+    }
+    #endregion
+
+    #region TextAlignment
+
+    /// <summary>
+    /// 标识 TextAlignment 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty TextAlignmentProperty =
+        DependencyProperty.Register("TextAlignment", typeof(TextAlignment), typeof(InputBase), new UIPropertyMetadata(TextAlignment.Left));
+
+    /// <summary>
+    /// Gets or sets 文本的对齐方式.
+    /// </summary>
+    public TextAlignment TextAlignment
+    {
+        get { return (TextAlignment)GetValue(TextAlignmentProperty); }
+        set { SetValue(TextAlignmentProperty, value); }
+    }
+
+    #endregion
+
+    #region Watermark
+
+    /// <summary>
+    /// 标识 Watermark 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty WatermarkProperty =
+        DependencyProperty.Register("Watermark", typeof(object), typeof(InputBase), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// Gets or sets 输入控件的水印.
+    /// </summary>
+    public object Watermark
+    {
+        get { return GetValue(WatermarkProperty); }
+        set { SetValue(WatermarkProperty, value); }
+    }
+
+    #endregion
+
+    #region WatermarkTemplate
+
+    /// <summary>
+    /// 标识 WatermarkTemplate 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty WatermarkTemplateProperty =
+        DependencyProperty.Register("WatermarkTemplate", typeof(DataTemplate), typeof(InputBase), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// Gets or sets 水印的数据模板(DataTemplate).
+    /// </summary>
+    public DataTemplate WatermarkTemplate
+    {
+        get { return (DataTemplate)GetValue(WatermarkTemplateProperty); }
+        set { SetValue(WatermarkTemplateProperty, value); }
+    }
+
+    #endregion
+
+    #endregion
+}

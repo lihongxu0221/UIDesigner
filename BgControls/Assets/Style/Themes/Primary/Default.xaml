@@ -1,0 +1,11 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Color x:Key="PrimaryColor">#CC4596FF</Color>
+    <Color x:Key="DarkPrimaryColor">#FF4596FF</Color>
+    <Color x:Key="TitleColor">#FF4596FF</Color>
+    <Color x:Key="SecondaryTitleColor">#CC4596FF</Color>
+
+    <SolidColorBrush x:Key="MouseHoverBrush" Color="{StaticResource PrimaryColor}" />
+    <SolidColorBrush x:Key="MouseDownBrush" Color="{StaticResource DarkPrimaryColor}" />
+</ResourceDictionary>

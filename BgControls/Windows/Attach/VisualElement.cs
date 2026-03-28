@@ -1,0 +1,152 @@
+namespace BgControls.Windows.Attach;
+
+/// <summary>
+/// 提供一组通用的视觉附加属性，主要用于增强控件的高亮显示效果和文本存储.
+/// </summary>
+/// <remarks>
+/// <para>
+/// 此类定义了多个 <see cref="Brush"/> 类型的附加属性，用于定义高亮状态下的
+/// 背景、边框、前景等样式.
+/// </para>
+/// <para>
+/// 高亮相关的属性使用了 <see cref="FrameworkPropertyMetadataOptions.Inherits"/> 选项，
+/// 这意味着在逻辑树或视觉树中，父元素设置的值会自动传递给未显式设置该属性的子元素.
+/// </para>
+/// </remarks>
+public class VisualElement
+{
+    /// <summary>
+    /// 标识 HighlightBrush 附加属性.
+    /// </summary>
+    /// <remarks>
+    /// 这是一个通用的高亮画笔属性. 当不需要区分背景、前景或边框，
+    /// 或者作为一种统一样式传递时可以使用此属性.
+    /// <para>此属性具有继承特性 (Inherits).</para>
+    /// </remarks>
+    public static readonly DependencyProperty HighlightBrushProperty =
+        DependencyProperty.RegisterAttached("HighlightBrush", typeof(Brush), typeof(VisualElement), new FrameworkPropertyMetadata(default(Brush), FrameworkPropertyMetadataOptions.Inherits));
+
+    /// <summary>
+    /// 标识 HighlightBackground 附加属性.
+    /// </summary>
+    /// <remarks>
+    /// 用于定义元素在高亮状态下的背景颜色.
+    /// <para>此属性具有继承特性 (Inherits).</para>
+    /// </remarks>
+    public static readonly DependencyProperty HighlightBackgroundProperty =
+        DependencyProperty.RegisterAttached("HighlightBackground", typeof(Brush), typeof(VisualElement), new FrameworkPropertyMetadata(default(Brush), FrameworkPropertyMetadataOptions.Inherits));
+
+    /// <summary>
+    /// 标识 HighlightBorderBrush 附加属性.
+    /// </summary>
+    /// <remarks>
+    /// 用于定义元素在高亮状态下的边框颜色.
+    /// <para>此属性具有继承特性 (Inherits).</para>
+    /// </remarks>
+    public static readonly DependencyProperty HighlightBorderBrushProperty =
+        DependencyProperty.RegisterAttached("HighlightBorderBrush", typeof(Brush), typeof(VisualElement), new FrameworkPropertyMetadata(default(Brush), FrameworkPropertyMetadataOptions.Inherits));
+
+    /// <summary>
+    /// 标识 HighlightForeground 附加属性.
+    /// </summary>
+    /// <remarks>
+    /// 用于定义元素在高亮状态下的前景色 (通常用于文本或图标颜色).
+    /// <para>此属性具有继承特性 (Inherits).</para>
+    /// </remarks>
+    public static readonly DependencyProperty HighlightForegroundProperty =
+        DependencyProperty.RegisterAttached("HighlightForeground", typeof(Brush), typeof(VisualElement), new FrameworkPropertyMetadata(default(Brush), FrameworkPropertyMetadataOptions.Inherits));
+
+    /// <summary>
+    /// 标识 Text 附加属性.
+    /// </summary>
+    /// <remarks>
+    /// 这是一个通用的字符串属性.
+    /// <para>
+    /// 它可以用于多种用途，例如：
+    /// 1. 存储水印文本 (Watermark)；
+    /// 2. 存储搜索过滤时的原始文本；
+    /// 3. 为不包含文本属性的容器附加说明信息.
+    /// </para>
+    /// <para>注意：此属性不具有继承特性.</para>
+    /// </remarks>
+    public static readonly DependencyProperty TextProperty =
+        DependencyProperty.RegisterAttached("Text", typeof(string), typeof(VisualElement), new PropertyMetadata(default(string)));
+
+    /// <summary>
+    /// 设置指定元素的高亮画笔.
+    /// </summary>
+    /// <param name="element">要设置属性的依赖对象.</param>
+    /// <param name="value">要设置的画笔值.</param>
+    public static void SetHighlightBrush(DependencyObject element, Brush value)
+        => element.SetValue(HighlightBrushProperty, value);
+
+    /// <summary>
+    /// 获取指定元素的高亮画笔.
+    /// </summary>
+    /// <param name="element">要获取属性的依赖对象.</param>
+    /// <returns>高亮画笔.</returns>
+    public static Brush GetHighlightBrush(DependencyObject element)
+        => (Brush)element.GetValue(HighlightBrushProperty);
+
+    /// <summary>
+    /// 设置指定元素的高亮背景画笔.
+    /// </summary>
+    /// <param name="element">要设置属性的依赖对象.</param>
+    /// <param name="value">要设置的背景画笔.</param>
+    public static void SetHighlightBackground(DependencyObject element, Brush value)
+        => element.SetValue(HighlightBackgroundProperty, value);
+
+    /// <summary>
+    /// 获取指定元素的高亮背景画笔.
+    /// </summary>
+    /// <param name="element">要获取属性的依赖对象.</param>
+    /// <returns>高亮背景画笔.</returns>
+    public static Brush GetHighlightBackground(DependencyObject element)
+        => (Brush)element.GetValue(HighlightBackgroundProperty);
+
+    /// <summary>
+    /// 设置指定元素的高亮边框画笔.
+    /// </summary>
+    /// <param name="element">要设置属性的依赖对象.</param>
+    /// <param name="value">要设置的边框画笔.</param>
+    public static void SetHighlightBorderBrush(DependencyObject element, Brush value)
+        => element.SetValue(HighlightBorderBrushProperty, value);
+
+    /// <summary>
+    /// 获取指定元素的高亮边框画笔.
+    /// </summary>
+    /// <param name="element">要获取属性的依赖对象.</param>
+    /// <returns>高亮边框画笔.</returns>
+    public static Brush GetHighlightBorderBrush(DependencyObject element)
+        => (Brush)element.GetValue(HighlightBorderBrushProperty);
+
+    /// <summary>
+    /// 设置指定元素的高亮前景画笔.
+    /// </summary>
+    /// <param name="element">要设置属性的依赖对象.</param>
+    /// <param name="value">要设置的前景画笔.</param>
+    public static void SetHighlightForeground(DependencyObject element, Brush value)
+        => element.SetValue(HighlightForegroundProperty, value);
+
+    /// <summary>
+    /// 获取指定元素的高亮前景画笔.
+    /// </summary>
+    /// <param name="element">要获取属性的依赖对象.</param>
+    /// <returns>高亮前景画笔.</returns>
+    public static Brush GetHighlightForeground(DependencyObject element)
+        => (Brush)element.GetValue(HighlightForegroundProperty);
+
+    /// <summary>
+    /// 设置指定元素的附加文本.
+    /// </summary>
+    /// <param name="element">要设置属性的依赖对象.</param>
+    /// <param name="value">要设置的文本内容.</param>
+    public static void SetText(DependencyObject element, string value) => element.SetValue(TextProperty, value);
+
+    /// <summary>
+    /// 获取指定元素的附加文本.
+    /// </summary>
+    /// <param name="element">要获取属性的依赖对象.</param>
+    /// <returns>附加的文本内容.</returns>
+    public static string GetText(DependencyObject element) => (string)element.GetValue(TextProperty);
+}

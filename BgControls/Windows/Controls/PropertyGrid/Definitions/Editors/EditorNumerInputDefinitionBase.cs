@@ -1,0 +1,132 @@
+using BgControls.Windows.Datas;
+
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// 定义用于 PropertyGrid 的数字输入编辑器的配置.
+/// </summary>
+public class EditorNumerInputDefinition : EditorBoundDefinition
+{
+    /// <summary>
+    /// 依赖属性：允许的最大值 (Maximum).
+    /// </summary>
+    public static readonly DependencyProperty MaximumProperty =
+        NumberInput.MaximumProperty.AddOwner(typeof(EditorNumerInputDefinition));
+
+    /// <summary>
+    /// 依赖属性：允许的最小值 (Minimum).
+    /// </summary>
+    public static readonly DependencyProperty MinimumProperty =
+        NumberInput.MinimumProperty.AddOwner(typeof(EditorNumerInputDefinition));
+
+    /// <summary>
+    /// 依赖属性：每次增/减的步长 (Increment).
+    /// </summary>
+    public static readonly DependencyProperty IncrementProperty =
+        NumberInput.IncrementProperty.AddOwner(typeof(EditorNumerInputDefinition));
+
+    /// <summary>
+    /// 依赖属性：显示的小数位数 (DecimalPlaces).
+    /// </summary>
+    public static readonly DependencyProperty DecimalPlacesProperty =
+        NumberInput.DecimalPlacesProperty.AddOwner(typeof(EditorNumerInputDefinition));
+
+    /// <summary>
+    ///  依赖属性：默认值.
+    /// </summary>
+    public static readonly DependencyProperty DefaultValueProperty =
+        NumberInput.DefaultValueProperty.AddOwner(typeof(EditorNumerInputDefinition));
+
+    /// <summary>
+    /// 依赖属性：是否为只读 (IsReadOnly).
+    /// </summary>
+    public static readonly DependencyProperty IsReadOnlyProperty =
+        NumberInput.IsReadOnlyProperty.AddOwner(typeof(EditorNumerInputDefinition));
+
+    /// <summary>
+    /// Gets or sets 允许的最大值.
+    /// </summary>
+    public double? Maximum
+    {
+        get => (double?)GetValue(MaximumProperty);
+        set => SetValue(MaximumProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 允许的最小值.
+    /// </summary>
+    public double? Minimum
+    {
+        get => (double?)GetValue(MinimumProperty);
+        set => SetValue(MinimumProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 每次点击增/减按钮或使用滚轮时变化的步长.
+    /// </summary>
+    public double Increment
+    {
+        get => (double)GetValue(IncrementProperty);
+        set => SetValue(IncrementProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 要显示的小数位数.如果为 null，则不限制.
+    /// </summary>
+    public int? DecimalPlaces
+    {
+        get => (int?)GetValue(DecimalPlacesProperty);
+        set => SetValue(DecimalPlacesProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets  默认值.
+    /// </summary>
+    public double? DefaultValue
+    {
+        get { return (double?)GetValue(DefaultValueProperty); }
+        set { SetValue(DefaultValueProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether gets or sets 获取或设置一个值，该值指示控件是否为只读.
+    /// </summary>
+    public bool IsReadOnly
+    {
+        get => (bool)GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, ValueBoxes.BooleanBox(value));
+    }
+
+    /// <inheritdoc/>
+    protected override FrameworkElement GenerateEditingElement(PropertyItemBase propertyItem)
+    {
+        NumberInput editor = CreateEditor();
+        this.InitializeUpDownEditor(editor);
+        this.UpdateStyle(editor);
+        this.UpdateBinding(editor, NumberInput.ValueProperty, propertyItem);
+        return editor;
+    }
+
+    /// <summary>
+    /// 创建编辑器实例.
+    /// </summary>
+    /// <returns>编辑器实例.</returns>
+    protected virtual NumberInput CreateEditor()
+    {
+        return new NumberInput();
+    }
+
+    /// <summary>
+    /// 初始化 UpDown 编辑器.
+    /// </summary>
+    /// <param name="editor">要初始化的编辑器.</param>
+    protected internal virtual void InitializeUpDownEditor(NumberInput editor)
+    {
+        this.UpdateProperty(editor, NumberInput.DecimalPlacesProperty, DecimalPlacesProperty);
+        this.UpdateProperty(editor, NumberInput.IncrementProperty, IncrementProperty);
+        this.UpdateProperty(editor, NumberInput.MaximumProperty, MaximumProperty);
+        this.UpdateProperty(editor, NumberInput.MinimumProperty, MinimumProperty);
+        this.UpdateProperty(editor, NumberInput.DefaultValueProperty, DefaultValueProperty);
+        this.UpdateProperty(editor, NumberInput.IsReadOnlyProperty, IsReadOnlyProperty);
+    }
+}

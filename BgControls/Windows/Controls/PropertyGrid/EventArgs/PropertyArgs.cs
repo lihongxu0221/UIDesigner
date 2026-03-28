@@ -1,0 +1,21 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// A RoutedEventArgs with a PropertyDescriptor property.
+/// </summary>
+public class PropertyArgs : RoutedEventArgs
+{
+    /// <summary>
+    /// Gets the PropertyDescriptor of the PropertyItem to obtain informations in order to set the propertyItem as browsable or expandable.
+    /// </summary>
+    public PropertyDescriptor PropertyDescriptor { get; private set; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PropertyArgs"/> class.
+    /// </summary>
+    /// <param name="pd">the PropertyDescriptor of the PropertyItem.</param>
+    public PropertyArgs(PropertyDescriptor pd)
+    {
+        this.PropertyDescriptor = pd;
+    }
+}

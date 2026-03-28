@@ -48,6 +48,7 @@
     <PackageVersion Include="System.Drawing.Common" Version="$(DotNetExtensionsVersion)" />
     <PackageVersion Include="Microsoft.VisualStudio.SDK" Version="17.10.40171"/>
     <PackageVersion Include="Microsoft.VisualStudio.TextTemplating" Version="17.10.40170"  />
+    <PackageVersion Include="System.IO.Ports" Version="8.0.0" />
     <PackageVersion Include="Microsoft.VisualStudio.TextTemplating.VSHost" Version="17.10.40171"/>
     <PackageVersion Include="Costura.Fody" Version="6.0.0"/>
     <PackageVersion Include="MessagePack" Version="$(MessagePackVersion)" />

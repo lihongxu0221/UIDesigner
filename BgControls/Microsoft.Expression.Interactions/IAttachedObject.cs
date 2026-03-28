@@ -1,0 +1,10 @@
+namespace Microsoft.Expression.Interactions;
+
+public interface IAttachedObject
+{
+    DependencyObject AssociatedObject { get; }
+
+    void Attach(DependencyObject dependencyObject);
+
+    void Detach();
+}

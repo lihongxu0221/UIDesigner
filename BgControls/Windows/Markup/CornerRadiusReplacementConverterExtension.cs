@@ -1,0 +1,106 @@
+namespace BgControls.Windows.Markup;
+
+/// <summary>
+/// Adapts the radius converter according to the radius of the parent element.
+/// </summary>
+public class CornerRadiusReplacementConverterExtension : MarkupExtension, IValueConverter
+{
+    private const string Auto = "Auto";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CornerRadiusReplacementConverterExtension"/> class.
+    /// </summary>
+    public CornerRadiusReplacementConverterExtension()
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CornerRadiusReplacementConverterExtension"/> class.
+    /// </summary>
+    public CornerRadiusReplacementConverterExtension(object topLeft, object topRight, object bottomRight, object bottomLeft)
+    {
+        this.TopLeft = topLeft;
+        this.TopRight = topRight;
+        this.BottomRight = bottomRight;
+        this.BottomLeft = bottomLeft;
+    }
+
+    public object TopLeft { get; set; } = Auto;
+
+    public object TopRight { get; set; } = Auto;
+
+    public object BottomRight { get; set; } = Auto;
+
+    public object BottomLeft { get; set; } = Auto;
+
+    /// <inheritdoc/>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is CornerRadius sourceCornerRadius)
+        {
+            return new CornerRadius(GetValue(TopLeft, sourceCornerRadius, sourceCornerRadius.TopLeft), GetValue(TopRight, sourceCornerRadius, sourceCornerRadius.TopRight), GetValue(BottomRight, sourceCornerRadius, sourceCornerRadius.BottomRight), GetValue(BottomLeft, sourceCornerRadius, sourceCornerRadius.BottomLeft));
+        }
+
+        if (value is double || value is int)
+        {
+            CornerRadius sourceCornerRadius2 = new CornerRadius(System.Convert.ToDouble(value));
+            return new CornerRadius(GetValue(TopLeft, sourceCornerRadius2, sourceCornerRadius2.TopLeft), GetValue(TopRight, sourceCornerRadius2, sourceCornerRadius2.TopRight), GetValue(BottomRight, sourceCornerRadius2, sourceCornerRadius2.BottomRight), GetValue(BottomLeft, sourceCornerRadius2, sourceCornerRadius2.BottomLeft));
+        }
+
+        return new CornerRadius(0.0);
+    }
+
+    /// <inheritdoc/>
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <inheritdoc/>
+    public override object ProvideValue(IServiceProvider serviceProvider)
+    {
+        return this;
+    }
+
+    private double GetValue(object operand, CornerRadius sourceCornerRadius, double autoValue)
+    {
+        if (operand is string text)
+        {
+            if ("Auto".Equals(text, StringComparison.Ordinal))
+            {
+                return autoValue;
+            }
+
+            if ("TopLeft".Equals(text, StringComparison.Ordinal))
+            {
+                return sourceCornerRadius.TopLeft;
+            }
+
+            if ("TopRight".Equals(text, StringComparison.Ordinal))
+            {
+                return sourceCornerRadius.TopRight;
+            }
+
+            if ("BottomRight".Equals(text, StringComparison.Ordinal))
+            {
+                return sourceCornerRadius.BottomRight;
+            }
+
+            if ("BottomLeft".Equals(text, StringComparison.Ordinal))
+            {
+                return sourceCornerRadius.BottomLeft;
+            }
+
+            if (double.TryParse(text, out var result))
+            {
+                return result;
+            }
+        }
+        else if (operand is double || operand is int)
+        {
+            return System.Convert.ToDouble(operand);
+        }
+
+        throw new ArgumentException("Value '" + operand?.ToString() + "' not recognized. Supported values are Auto, Left, Top, Right, Bottom or a double value.");
+    }
+}

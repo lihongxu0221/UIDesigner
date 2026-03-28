@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>$(DefaultTargetFramework)-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionSuffix>beta1</VersionSuffix>
+    <!-- 强制不复制所有 NuGet 依赖到输出目录 -->
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\BgCommon.Localization\BgCommon.Localization.csproj" />
+    <ProjectReference Include="..\BgCommon\BgCommon.csproj" />
+    <ProjectReference Include="..\BgLogger\BgLogger.csproj" />
+    <ProjectReference Include="..\BgControls\BgControls.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Costura.Fody" PrivateAssets="All"/>
+    <PackageReference Include="CommunityToolkit.Mvvm" PrivateAssets="All"/>
+    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Prism.Wpf" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,17 @@
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 表示颜色的排序模式枚举.
+/// </summary>
+public enum ColorSortingMode
+{
+    /// <summary>
+    /// 按名称的字母顺序排序.
+    /// </summary>
+    Alphabetical,
+
+    /// <summary>
+    /// 按色相、饱和度、亮度 (HSB/HSV) 进行排序.
+    /// </summary>
+    HueSaturationBrightness,
+}

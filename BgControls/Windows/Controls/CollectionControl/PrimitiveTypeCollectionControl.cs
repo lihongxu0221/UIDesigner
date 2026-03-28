@@ -1,0 +1,300 @@
+using BgControls.Windows.Automation.Peers;
+using System.Windows.Automation.Peers;
+
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// Represents an editor of primitive types.
+/// </summary>
+public class PrimitiveTypeCollectionControl : ContentControl
+{
+    /// <summary>
+    /// Identifies the IsOpen dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsOpenProperty = 
+        DependencyProperty.Register("IsOpen", typeof(bool), typeof(PrimitiveTypeCollectionControl), new UIPropertyMetadata(false, OnIsOpenChanged));
+
+    /// <summary>
+    /// Identifies the ItemsSource dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ItemsSourceProperty = 
+        DependencyProperty.Register("ItemsSource", typeof(IList), typeof(PrimitiveTypeCollectionControl), new UIPropertyMetadata(null, OnItemsSourceChanged));
+
+    /// <summary>
+    /// Identifies the IsReadOnly dependency property.
+    /// </summary>
+    public static readonly DependencyProperty IsReadOnlyProperty =
+        DependencyProperty.Register("IsReadOnly", typeof(bool), typeof(PrimitiveTypeCollectionControl), new UIPropertyMetadata(false));
+
+    /// <summary>
+    /// Identifies the ItemsSourceType dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ItemsSourceTypeProperty =
+        DependencyProperty.Register("ItemsSourceType", typeof(Type), typeof(PrimitiveTypeCollectionControl), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// Identifies the ItemType dependency property.
+    /// </summary>
+    public static readonly DependencyProperty ItemTypeProperty =
+        DependencyProperty.Register("ItemType", typeof(Type), typeof(PrimitiveTypeCollectionControl), new UIPropertyMetadata(null));
+
+    /// <summary>
+    /// Identifies the Text dependency property.
+    /// </summary>
+    public static readonly DependencyProperty TextProperty =
+        DependencyProperty.Register("Text", typeof(string), typeof(PrimitiveTypeCollectionControl), new UIPropertyMetadata(null, OnTextChanged));
+
+    static PrimitiveTypeCollectionControl()
+    {
+        FrameworkElement.DefaultStyleKeyProperty.OverrideMetadata(
+            typeof(PrimitiveTypeCollectionControl),
+            new FrameworkPropertyMetadata(typeof(PrimitiveTypeCollectionControl)));
+    }
+
+    private bool surpressTextChanged;
+    private bool conversionFailed;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PrimitiveTypeCollectionControl"/> class.
+    /// </summary>
+    public PrimitiveTypeCollectionControl()
+    {
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the editor's dropdown is open.
+    /// </summary>
+    public bool IsOpen
+    {
+        get { return (bool)GetValue(IsOpenProperty); }
+        set { SetValue(IsOpenProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets a collection used to generate the content of the control.
+    /// </summary>
+    public IList? ItemsSource
+    {
+        get { return (IList)GetValue(ItemsSourceProperty); }
+        set { SetValue(ItemsSourceProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether gets or sets whether the control is read-only.
+    /// </summary>
+    public bool IsReadOnly
+    {
+        get { return (bool)GetValue(IsReadOnlyProperty); }
+        set { SetValue(IsReadOnlyProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets the type of ItemsSource.
+    /// </summary>
+    public Type ItemsSourceType
+    {
+        get { return (Type)GetValue(ItemsSourceTypeProperty); }
+        set { SetValue(ItemsSourceTypeProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets the type of the item.
+    /// </summary>
+    public Type ItemType
+    {
+        get { return (Type)GetValue(ItemTypeProperty); }
+        set { SetValue(ItemTypeProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets the text of the editor.
+    /// </summary>
+    public string Text
+    {
+        get { return (string)GetValue(TextProperty); }
+        set { SetValue(TextProperty, value); }
+    }
+
+    private static void OnIsOpenChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is PrimitiveTypeCollectionControl primitiveTypeCollectionControl)
+        {
+            primitiveTypeCollectionControl.OnIsOpenChanged((bool)e.OldValue, (bool)e.NewValue);
+        }
+    }
+
+    /// <summary>
+    /// Called when IsOpen changes.
+    /// </summary>
+    /// <param name="oldValue">The old value.</param>
+    /// <param name="newValue">The new value.</param>
+    protected virtual void OnIsOpenChanged(bool oldValue, bool newValue)
+    {
+    }
+
+    private static void OnItemsSourceChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is PrimitiveTypeCollectionControl primitiveTypeCollectionControl)
+        {
+            primitiveTypeCollectionControl.OnItemsSourceChanged((IList)e.OldValue, (IList)e.NewValue);
+        }
+    }
+
+    /// <summary>
+    /// Called when ItemsSource changes.
+    /// </summary>
+    /// <param name="oldValue">The old value.</param>
+    /// <param name="newValue">The new value.</param>
+    protected virtual void OnItemsSourceChanged(IList oldValue, IList newValue)
+    {
+        if (newValue != null)
+        {
+            if (this.ItemsSourceType == null)
+            {
+                this.ItemsSourceType = newValue.GetType();
+            }
+
+            if (this.ItemType == null && newValue.GetType().ContainsGenericParameters)
+            {
+                this.ItemType = newValue.GetType().GetGenericArguments()[0];
+            }
+
+            this.SetText(newValue);
+        }
+    }
+
+    private static void OnTextChanged(DependencyObject o, DependencyPropertyChangedEventArgs e)
+    {
+        if (o is PrimitiveTypeCollectionControl primitiveTypeCollectionControl)
+        {
+            primitiveTypeCollectionControl.OnTextChanged((string)e.OldValue, (string)e.NewValue);
+        }
+    }
+
+    /// <summary>
+    /// Called when Text changes.
+    /// </summary>
+    /// <param name="oldValue"> old value.</param>
+    /// <param name="newValue"> new value.</param>
+    protected virtual void OnTextChanged(string oldValue, string newValue)
+    {
+        if (!surpressTextChanged)
+        {
+            PersistChanges();
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override AutomationPeer OnCreateAutomationPeer()
+    {
+        return new GenericAutomationPeer(this);
+    }
+
+    private void PersistChanges()
+    {
+        IList? list = this.ComputeItemsSource();
+        if (list == null)
+        {
+            return;
+        }
+
+        IList items = this.ComputeItems();
+
+        list.Clear();
+        int counter = 0;
+        foreach (object item in items)
+        {
+            if (list is Array array)
+            {
+                array.SetValue(item, counter++);
+            }
+            else
+            {
+                list.Add(item);
+            }
+        }
+
+        if (conversionFailed)
+        {
+            this.SetText(list);
+        }
+    }
+
+    private IList ComputeItems()
+    {
+        var items = new List<object>();
+        if (this.ItemType == null)
+        {
+            return items;
+        }
+
+        string[] textArray = this.Text.Split('\n');
+        for (int i = 0; i < textArray.Length; i++)
+        {
+            string valueString = textArray[i].TrimEnd('\r');
+            if (!string.IsNullOrEmpty(valueString))
+            {
+                object? value = null;
+                try
+                {
+                    if (ItemType.IsEnum)
+                    {
+                        value = Enum.Parse(ItemType, valueString);
+                    }
+                    else
+                    {
+                        value = Convert.ChangeType(valueString, ItemType);
+                    }
+                }
+                catch
+                {
+                    conversionFailed = true;
+                }
+
+                if (value != null)
+                {
+                    items.Add(value);
+                }
+            }
+        }
+
+        return items;
+    }
+
+    private IList? ComputeItemsSource()
+    {
+        if (this.ItemsSource == null)
+        {
+            string currentText = Text;
+            this.ItemsSource = this.CreateItemsSource();
+            this.Text = currentText;
+        }
+
+        return this.ItemsSource;
+    }
+
+    private IList? CreateItemsSource()
+    {
+        IList? result = null;
+        if (this.ItemsSourceType != null)
+        {
+            result = (IList?)this.ItemsSourceType.GetConstructor(Type.EmptyTypes)?.Invoke(null);
+        }
+
+        return result;
+    }
+
+    private void SetText(IEnumerable collection)
+    {
+        this.surpressTextChanged = true;
+        StringBuilder builder = new StringBuilder();
+        foreach (object item in collection)
+        {
+            builder.Append(item.ToString());
+            builder.AppendLine();
+        }
+
+        this.Text = builder.ToString().Trim();
+        this.surpressTextChanged = false;
+    }
+}

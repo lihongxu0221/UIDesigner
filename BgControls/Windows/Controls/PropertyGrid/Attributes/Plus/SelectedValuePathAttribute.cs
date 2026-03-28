@@ -1,0 +1,27 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Attributes;
+
+/// <summary>
+/// 指定用于获取项的选定值的路径.
+/// </summary>
+/// <remarks>
+/// 该特性通常用于数据绑定或列表类控件场景，标记在属性上以定义获取选中项实际值的路径.
+/// 例如，在绑定集合数据的下拉框或列表中，可通过此路径从选中的复杂对象中提取特定属性值作为选中值，而非整个对象本身.
+/// </remarks>
+[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+public class SelectedValuePathAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SelectedValuePathAttribute"/> class.
+    /// </summary>
+    /// <param name="path">用于获取选定值的路径，可为简单属性名或嵌套属性路径（如 "Id" 或 "User.Info.Id"）.</param>
+    public SelectedValuePathAttribute(string path)
+    {
+        this.Path = path;
+    }
+
+    /// <summary>
+    /// Gets or sets 用于获取选定值的路径.
+    /// </summary>
+    /// <value>用于获取选定值的路径.</value>
+    public string Path { get; set; }
+}

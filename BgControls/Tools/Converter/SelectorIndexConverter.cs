@@ -1,0 +1,21 @@
+namespace BgControls.Tools.Converter;
+
+public class SelectorIndexConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        var item = (Selector)value;
+        if (ItemsControl.ItemsControlFromItemContainer(item) is Selector selector)
+        {
+            int index = selector.ItemContainerGenerator.IndexFromContainer(item) + 1; // 从1开始
+            return index.ToString();
+        }
+
+        return value;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

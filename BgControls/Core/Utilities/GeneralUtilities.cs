@@ -1,0 +1,71 @@
+namespace BgControls.Core.Utilities;
+
+internal sealed class GeneralUtilities : DependencyObject
+{
+    internal static readonly DependencyProperty StubValueProperty =
+        DependencyProperty.RegisterAttached("StubValue", typeof(object), typeof(GeneralUtilities), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+
+    private GeneralUtilities()
+    {
+    }
+
+    internal static object GetStubValue(DependencyObject obj)
+    {
+        return obj.GetValue(StubValueProperty);
+    }
+
+    internal static void SetStubValue(DependencyObject obj, object value)
+    {
+        obj.SetValue(StubValueProperty, value);
+    }
+
+    public static object GetPathValue(object sourceObject, string path)
+    {
+        GeneralUtilities generalUtilities = new GeneralUtilities();
+        BindingOperations.SetBinding(
+            generalUtilities,
+            StubValueProperty,
+            new Binding(path)
+            {
+                Source = sourceObject,
+            });
+        object stubValue = GetStubValue(generalUtilities);
+        BindingOperations.ClearBinding(generalUtilities, StubValueProperty);
+        return stubValue;
+    }
+
+    public static object GetBindingValue(object sourceObject, Binding binding)
+    {
+        GeneralUtilities generalUtilities = new GeneralUtilities();
+        BindingOperations.SetBinding(
+            generalUtilities,
+            StubValueProperty,
+            new Binding
+            {
+                BindsDirectlyToSource = binding.BindsDirectlyToSource,
+                Converter = binding.Converter,
+                ConverterCulture = binding.ConverterCulture,
+                ConverterParameter = binding.ConverterParameter,
+                FallbackValue = binding.FallbackValue,
+                Mode = BindingMode.OneTime,
+                Path = binding.Path,
+                StringFormat = binding.StringFormat,
+                TargetNullValue = binding.TargetNullValue,
+                XPath = binding.XPath,
+                Source = sourceObject,
+            });
+        object stubValue = GetStubValue(generalUtilities);
+        BindingOperations.ClearBinding(generalUtilities, StubValueProperty);
+        return stubValue;
+    }
+
+    internal static bool CanConvertValue(object value, object targetType)
+    {
+        if (value != null && !object.Equals(value.GetType(), targetType))
+        {
+            return !object.Equals(targetType, typeof(object));
+        }
+
+        return false;
+    }
+}

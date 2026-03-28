@@ -1,0 +1,135 @@
+namespace BgControls;
+
+/// <summary>
+/// 提供针对 <see cref="ItemsControl"/> 及其子项容器的扩展辅助方法.
+/// </summary>
+public static partial class Extensions
+{
+    /// <summary>
+    /// 遍历 <see cref="ItemsControl"/> 中所有已生成的项容器，并执行指定的委派操作.
+    /// </summary>
+    /// <typeparam name="T">容器的类型（如 TabItem 或 ListBoxItem）.</typeparam>
+    /// <param name="control">目标项控件.</param>
+    /// <param name="action">对每个生成的容器执行的操作委派.</param>
+    internal static void ForEachContainerItem<T>(this ItemsControl control, Action<T>? action = null)
+        where T : class
+    {
+        if (control == null || action == null)
+        {
+            return;
+        }
+
+        // 获取项生成器状态，仅遍历已生成的容器
+        var generator = control.ItemContainerGenerator;
+        int count = control.Items.Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (generator.ContainerFromIndex(i) is T container)
+            {
+                action.Invoke(container);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取 <see cref="ItemsControl"/> 中所有生成的项容器集合.
+    /// </summary>
+    /// <typeparam name="T">期望的容器类型.</typeparam>
+    /// <param name="target">目标项控件.</param>
+    /// <returns>容器实例的延迟加载枚举集合.</returns>
+    internal static IEnumerable<T> GetContainers<T>(this ItemsControl target)
+        where T : class
+    {
+        if (target == null)
+        {
+            yield break;
+        }
+
+        var generator = target.ItemContainerGenerator;
+        int count = target.Items.Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            // 优先逻辑：从生成器获取 UI 容器.
+            // 这是处理数据绑定（ItemsSource）场景的标准方式.
+            T? container = generator.ContainerFromIndex(i) as T;
+
+            // 备选逻辑：如果生成器未返回容器，检查数据项本身是否就是容器类型.
+            // 这处理了直接向 Items 集合添加 UI 元素（如直接 new TabItem()）的场景.
+            if (container == null && i < target.Items.Count)
+            {
+                container = target.Items[i] as T;
+            }
+
+            if (container != null)
+            {
+                yield return container;
+            }
+        }
+    }
+
+    /// <summary>
+    /// 获取项控件内部实际承载项的可视化面板实例.
+    /// </summary>
+    /// <param name="itemsControl">目标依赖对象.</param>
+    /// <returns>承载项的面板实例；如果未找到则返回 null.</returns>
+    internal static Panel? GetItemsPanel(this DependencyObject itemsControl)
+    {
+        return GetItemsPanelRecursive<Panel>(itemsControl);
+    }
+
+    /// <summary>
+    /// 获取项控件内部指定类型的可视化承载面板实例.
+    /// </summary>
+    /// <typeparam name="TPanel">面板的具体类型.</typeparam>
+    /// <param name="itemsControl">目标依赖对象.</param>
+    /// <returns>匹配类型的面板实例.</returns>
+    internal static TPanel? GetItemsPanel<TPanel>(this DependencyObject itemsControl)
+        where TPanel : Panel
+    {
+        return GetItemsPanelRecursive<TPanel>(itemsControl);
+    }
+
+    /// <summary>
+    /// 递归搜索可视化树以查找位于 ItemsPresenter 下方的目标面板.
+    /// </summary>
+    /// <typeparam name="TPanel">面板的具体类型.</typeparam>
+    /// <param name="obj">当前搜索的起始节点.</param>
+    /// <returns>找到的目标面板；否则返回 null.</returns>
+    private static TPanel? GetItemsPanelRecursive<TPanel>(this DependencyObject obj)
+        where TPanel : Panel
+    {
+        if (obj == null)
+        {
+            return null;
+        }
+
+        if (obj is Control control)
+        {
+            control.ApplyTemplate();
+        }
+
+        int count = VisualTreeHelper.GetChildrenCount(obj);
+        for (int i = 0; i < count; i++)
+        {
+            DependencyObject child = VisualTreeHelper.GetChild(obj, i);
+            if (child is UIElement element)
+            {
+                // ItemsPanel 必须是 ItemsPresenter 的直接视觉子级.
+                if (element is TPanel result && VisualTreeHelper.GetParent(element) is ItemsPresenter)
+                {
+                    return result;
+                }
+
+                TPanel? found = element.GetItemsPanelRecursive<TPanel>();
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+        }
+
+        return null;
+    }
+}

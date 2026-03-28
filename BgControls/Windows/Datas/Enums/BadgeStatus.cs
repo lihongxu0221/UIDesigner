@@ -1,0 +1,22 @@
+namespace BgControls.Windows.Datas;
+
+/// <summary>
+/// 徽章状态枚举.
+/// </summary>
+public enum BadgeStatus
+{
+    /// <summary>
+    /// 文字型（显示具体文本内容，如数字/文字提示）.
+    /// </summary>
+    Text,
+
+    /// <summary>
+    /// 圆点型（仅显示小红点，无具体数值）.
+    /// </summary>
+    Dot,
+
+    /// <summary>
+    /// 处理中（加载/进行中状态，如转圈动画）.
+    /// </summary>
+    Processing,
+}

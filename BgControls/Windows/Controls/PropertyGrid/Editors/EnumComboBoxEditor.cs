@@ -1,0 +1,39 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Editors;
+
+/// <summary>
+/// 枚举下拉框编辑器.
+/// </summary>
+public class EnumComboBoxEditor : ComboBoxEditor
+{
+    /// <inheritdoc/>
+    protected override IEnumerable CreateItemsSource(PropertyItem propertyItem)
+    {
+        return GetValues(propertyItem.PropertyType);
+    }
+
+    private static object[] GetValues(Type enumType)
+    {
+        List<object> values = new List<object>();
+
+        if (enumType != null)
+        {
+            var fields = enumType.GetFields().Where(x => x.IsLiteral);
+            foreach (FieldInfo field in fields)
+            {
+                object[] attrs = field.GetCustomAttributes(typeof(BrowsableAttribute), false);
+                if (attrs.Length == 1)
+                {
+                    BrowsableAttribute brAttr = (BrowsableAttribute)attrs[0];
+                    if (brAttr.Browsable == false)
+                    {
+                        continue;
+                    }
+                }
+
+                values.Add(field.GetValue(enumType));
+            }
+        }
+
+        return values.ToArray();
+    }
+}

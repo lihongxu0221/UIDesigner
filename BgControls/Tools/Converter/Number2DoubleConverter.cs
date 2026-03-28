@@ -1,0 +1,67 @@
+namespace BgControls.Tools.Converter;
+
+/// <summary>
+/// Number 类型转换为 Double 类型的值转换器.
+/// </summary>
+public class Number2DoubleConverter : IValueConverter
+{
+    /// <inheritdoc/>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value == null)
+        {
+            return 0.0;
+        }
+
+        // 使用 IConvertible 接口通吃所有数值类型 (sbyte, int, float, decimal...)
+        if (value is IConvertible convertible)
+        {
+            try
+            {
+                return convertible.ToDouble(culture);
+            }
+            catch
+            {
+                return 0.0;
+            }
+        }
+
+        return 0.0;
+    }
+
+    /// <inheritdoc/>
+    public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        if (value is double doubleValue)
+        {
+            Type convertType = targetType;
+            if (parameter is Type paramType)
+            {
+                convertType = paramType;
+            }
+
+            // 如果目标类型是具体类型（如 sbyte），尝试转换回去
+            // 注意：如果 targetType 是 object（PropertyItem.Value 通常是 object），
+            // 这里可能需要依赖 PropertyItem 内部的 SetValue 逻辑来处理类型强转.
+            if (convertType != typeof(object) && convertType != typeof(double))
+            {
+                try
+                {
+                    return System.Convert.ChangeType(doubleValue, convertType, culture);
+                }
+                catch
+                {
+                    // 转换失败（溢出等），返回原始值，让 WPF 抛出验证错误或忽略
+                    return value;
+                }
+            }
+        }
+
+        return value;
+    }
+}

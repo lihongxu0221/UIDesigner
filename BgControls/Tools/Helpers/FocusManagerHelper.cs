@@ -1,0 +1,17 @@
+namespace BgControls.Tools.Helpers;
+
+/// <summary>
+/// 提供针对 WPF 焦点管理（FocusManager）的辅助方法.
+/// </summary>
+public static class FocusManagerHelper
+{
+    /// <summary>
+    /// 获取指定依赖对象所属焦点范围（Focus Scope）内的当前选定元素.
+    /// </summary>
+    /// <param name="element">用于确定焦点范围的起始依赖对象.</param>
+    /// <returns>当前具有焦点的元素；如果未找到则返回 <see langword="null"/>.</returns>
+    public static IInputElement GetFocusedElement(this DependencyObject element)
+    {
+        return FocusManager.GetFocusedElement(FocusManager.GetFocusScope(element));
+    }
+}

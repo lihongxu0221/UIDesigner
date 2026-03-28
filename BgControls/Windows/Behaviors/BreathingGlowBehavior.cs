@@ -1,0 +1,663 @@
+using Microsoft.Expression.Interactions;
+
+namespace BgControls.Windows.Behaviors;
+
+/// <summary>
+/// 一个可附加的行为，为任何UI元素提供一个从内向外扩散的脉冲辉光效果.
+/// 此行为使用Adorner确保效果始终在顶层渲染，并解决了所有已知的遮挡问题.
+/// </summary>
+public class BreathingGlowBehavior : Behavior<FrameworkElement>
+{
+    private BreathingGlowAdorner? adorner;
+    private Storyboard? storyboard;
+    private bool isUpdatingAdornerState = false;
+
+    public static readonly DependencyProperty IsBreathingProperty =
+        DependencyProperty.Register(nameof(IsBreathing), typeof(bool), typeof(BreathingGlowBehavior), new PropertyMetadata(false, OnIsBreathingChanged));
+
+    public static readonly DependencyProperty BrushProperty;
+
+    public static readonly DependencyProperty ThicknessProperty =
+        DependencyProperty.Register(nameof(Thickness), typeof(Thickness), typeof(BreathingGlowBehavior), new PropertyMetadata(new Thickness(5.0), OnThicknessChanged));
+
+    public static readonly DependencyProperty MarginProperty =
+        DependencyProperty.Register(nameof(Margin), typeof(Thickness), typeof(BreathingGlowBehavior), new PropertyMetadata(new Thickness(-5.0), OnMarginChanged));
+
+    public static readonly DependencyProperty CornerRadiusProperty =
+        DependencyProperty.Register(nameof(CornerRadius), typeof(CornerRadius), typeof(BreathingGlowBehavior), new PropertyMetadata(new CornerRadius(8), OnCornerRadiusChanged));
+
+    public static readonly DependencyProperty OpacityProperty =
+        DependencyProperty.Register(nameof(Opacity), typeof(double), typeof(BreathingGlowBehavior), new PropertyMetadata(0.8, OnPropertyChanged));
+
+    public static readonly DependencyProperty IntervalProperty =
+        DependencyProperty.Register(nameof(Interval), typeof(double), typeof(BreathingGlowBehavior), new PropertyMetadata(1d, OnPropertyChanged));
+
+    public static readonly DependencyProperty EasingModeProperty =
+        DependencyProperty.Register(nameof(EasingMode), typeof(EasingMode), typeof(BreathingGlowBehavior), new PropertyMetadata(EasingMode.EaseInOut, OnPropertyChanged));
+
+    public static readonly DependencyProperty AutoReverseProperty =
+        DependencyProperty.Register(nameof(AutoReverse), typeof(bool), typeof(BreathingGlowBehavior), new PropertyMetadata(false, OnPropertyChanged));
+
+    static BreathingGlowBehavior()
+    {
+        var defaultBrush = new SolidColorBrush(Colors.White);
+        defaultBrush.Freeze(); // 显式冻结
+        BrushProperty = DependencyProperty.Register(nameof(Brush), typeof(Brush), typeof(BreathingGlowBehavior), new PropertyMetadata(defaultBrush, OnBrushChanged));
+    }
+
+    /// <summary>
+    ///  Gets or sets a value indicating whether gets or sets 该值指示脉冲动画是否处于激活状态.
+    /// </summary>
+    public bool IsBreathing
+    {
+        get => (bool)GetValue(IsBreathingProperty);
+        set => SetValue(IsBreathingProperty, value);
+    }
+
+    private static void OnIsBreathingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        BreathingGlowBehavior? behavior = (BreathingGlowBehavior?)d;
+        if (behavior == null || behavior.AssociatedObject == null)
+        {
+            return;
+        }
+
+        if ((bool)e.NewValue)
+        {
+            behavior.StartAnimation();
+        }
+        else
+        {
+            behavior.StopAnimation();
+        }
+    }
+
+    /// <summary>
+    ///  Gets or sets 用于辉光效果的画刷.
+    /// </summary>
+    public Brush Brush
+    {
+        get { return (Brush)GetValue(BrushProperty); }
+        set { SetValue(BrushProperty, value); }
+    }
+
+    private static void OnBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var behavior = (BreathingGlowBehavior)d;
+        Brush brush = (Brush)e.NewValue;
+        if (!brush.IsFrozen && brush.CanFreeze)
+        {
+            brush.Freeze();
+        }
+
+        behavior.adorner?.UpdateBrush(brush);
+    }
+
+    public Thickness Thickness
+    {
+        get { return (Thickness)GetValue(ThicknessProperty); }
+        set { SetValue(ThicknessProperty, value); }
+    }
+
+    private static void OnThicknessChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var behavior = (BreathingGlowBehavior)d;
+        behavior.adorner?.UpdateThickness((Thickness)e.NewValue);
+    }
+
+    public Thickness Margin
+    {
+        get => (Thickness)GetValue(MarginProperty);
+        set => SetValue(MarginProperty, value);
+    }
+
+    private static void OnMarginChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var behavior = (BreathingGlowBehavior)d;
+        behavior.adorner?.UpdateMargin((Thickness)e.NewValue);
+    }
+
+    public CornerRadius CornerRadius
+    {
+        get => (CornerRadius)GetValue(CornerRadiusProperty);
+        set => SetValue(CornerRadiusProperty, value);
+    }
+
+    private static void OnCornerRadiusChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var behavior = (BreathingGlowBehavior)d;
+        behavior.adorner?.UpdateCornerRadius((CornerRadius)e.NewValue);
+    }
+
+    public double Opacity
+    {
+        get => (double)GetValue(OpacityProperty);
+        set => SetValue(OpacityProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 呼吸间隔.
+    /// </summary>
+    public double Interval
+    {
+        get => (double)GetValue(IntervalProperty);
+        set => SetValue(IntervalProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 淡入淡出方式.
+    /// </summary>
+    public EasingMode EasingMode
+    {
+        get => (EasingMode)GetValue(EasingModeProperty);
+        set => SetValue(EasingModeProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether true: 呼吸模式， false: 脉冲模式
+    /// </summary>
+    public bool AutoReverse
+    {
+        get => (bool)GetValue(AutoReverseProperty);
+        set => SetValue(AutoReverseProperty, value);
+    }
+
+    private static void OnPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var behavior = (BreathingGlowBehavior)d;
+        if (behavior.storyboard != null)
+        {
+            behavior.UpdateStoryboardParameters(true);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override void OnAttached()
+    {
+        base.OnAttached();
+        AssociatedObject.Loaded += AssociatedObject_Loaded;
+        AssociatedObject.Unloaded += AssociatedObject_Unloaded;
+        AssociatedObject.IsVisibleChanged += AssociatedObject_IsVisibleChanged;
+    }
+
+    /// <inheritdoc/>
+    protected override void OnDetaching()
+    {
+        base.OnDetaching();
+
+        // 解除所有事件订阅
+        if (AssociatedObject != null)
+        {
+            AssociatedObject.Loaded -= this.AssociatedObject_Loaded;
+            AssociatedObject.Unloaded -= this.AssociatedObject_Unloaded;
+            AssociatedObject.IsVisibleChanged -= this.AssociatedObject_IsVisibleChanged;
+        }
+
+        // 调用统一的清理逻辑.
+        // 这能确保在 Behavior被显式移除时，资源也能被正确释放.
+        this.CleanupResources();
+    }
+
+    private void AssociatedObject_Unloaded(object sender, RoutedEventArgs e)
+    {
+        // 当控件从可视化树卸载时（例如窗口关闭），执行所有清理操作.
+        // 这是防止内存泄漏的关键！
+        this.CleanupResources();
+    }
+
+    private void AssociatedObject_Loaded(object sender, RoutedEventArgs e) => UpdateAdornerAndAnimationState();
+
+    private void AssociatedObject_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e) => UpdateAdornerAndAnimationState();
+
+    private void UpdateAdornerAndAnimationState()
+    {
+        // 如果该方法已经在执行中，则立即返回，打破递归循环.
+        if (isUpdatingAdornerState)
+        {
+            return;
+        }
+
+        try
+        {
+            // 进入方法后，立即设置标志.
+            isUpdatingAdornerState = true;
+            if (AssociatedObject.IsLoaded && AssociatedObject.IsVisible)
+            {
+                // 如果 Adorner 不存在，则创建它
+                if (adorner == null)
+                {
+                    CreateAdorner();
+                }
+
+                if (IsBreathing)
+                {
+                    StartAnimation();
+                }
+                else
+                {
+                    StopAnimation();
+                }
+            }
+            else
+            {
+                StopAnimation();
+                RemoveAdorner();
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"BreathingGlowBehavior error: {ex.Message}");
+            StopAnimation();
+            RemoveAdorner();
+        }
+        finally
+        {
+            // 无论方法如何退出（正常返回或异常），都确保重置标志.
+            isUpdatingAdornerState = false;
+        }
+    }
+
+    private void CreateAdorner()
+    {
+        if (AssociatedObject == null || !AssociatedObject.IsLoaded || !AssociatedObject.IsVisible || this.adorner != null)
+        {
+            return;
+        }
+
+        var adornerLayer = AdornerLayer.GetAdornerLayer(AssociatedObject);
+        if (adornerLayer == null)
+        {
+            System.Diagnostics.Debug.WriteLine("PulsatingGlowBehavior Warning: Could not find an AdornerLayer...");
+            return;
+        }
+
+        this.adorner = new BreathingGlowAdorner(AssociatedObject, Brush, Thickness, Margin, CornerRadius);
+        adornerLayer.Add(this.adorner);
+    }
+
+    private void RemoveAdorner()
+    {
+        if (AssociatedObject == null || adorner == null)
+        {
+            return;
+        }
+
+        // 1. 将当前的 adorner 实例捕获到局部变量中.
+        BreathingGlowAdorner localAdorner = adorner;
+
+        // 2. **立即**将成员变量设为 null.
+        //    这是打破递归调用的核心步骤！任何重入的调用都会在方法开始时就返回.
+        adorner = null;
+
+        // 3. 使用局部变量执行所有清理操作.
+        var adornerLayer = AdornerLayer.GetAdornerLayer(AssociatedObject);
+        if (adornerLayer != null)
+        {
+            // 1. 先从层中移除，断开与可视化树的连接
+            adornerLayer.Remove(localAdorner);
+        }
+
+        // 无论是否能找到 AdornerLayer，都必须调用 Detach 来解除内部引用和事件
+        localAdorner.Detach();
+    }
+
+    private void StartAnimation()
+    {
+        if (adorner == null)
+        {
+            CreateAdorner();
+            if (adorner == null)
+            {
+                return;
+            }
+        }
+
+        if (storyboard == null)
+        {
+            storyboard = new Storyboard();
+
+            // 动画1: Opacity (从可见渐变到完全透明)
+            var opacityAnimation = new DoubleAnimation
+            {
+                From = 0,
+                To = Opacity,
+                Duration = new Duration(TimeSpan.FromSeconds(Interval)),
+                RepeatBehavior = RepeatBehavior.Forever,
+                EasingFunction = new SineEase { EasingMode = EasingMode },
+                AutoReverse = this.AutoReverse,
+            };
+            Storyboard.SetTargetName(opacityAnimation, BreathingGlowAdorner.BorderElementName);
+            Storyboard.SetTargetProperty(opacityAnimation, new PropertyPath(UIElement.OpacityProperty));
+            storyboard.Children.Add(opacityAnimation);
+
+            // 获取 ScaleTransform 以便作为动画目标
+            // var scaleTransform = adorner.Element.RenderTransform as ScaleTransform;
+            // if (scaleTransform != null)
+            {
+                // 动画2: ScaleX
+                var scaleXAnimation = new DoubleAnimation
+                {
+                    From = 0.3, // 从控件尺寸的10%开始
+                    To = 1.0,
+                    Duration = new Duration(TimeSpan.FromSeconds(Interval)),
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    EasingFunction = new PowerEase { EasingMode = EasingMode },
+                    AutoReverse = this.AutoReverse,
+                };
+                Storyboard.SetTargetName(scaleXAnimation, BreathingGlowAdorner.ScaleTransformName);
+                Storyboard.SetTargetProperty(scaleXAnimation, new PropertyPath(ScaleTransform.ScaleXProperty));
+                storyboard.Children.Add(scaleXAnimation);
+
+                // 动画3: ScaleY
+                var scaleYAnimation = new DoubleAnimation
+                {
+                    From = 0.3,
+                    To = 1.0,
+                    Duration = new Duration(TimeSpan.FromSeconds(Interval)),
+                    RepeatBehavior = RepeatBehavior.Forever,
+                    EasingFunction = new PowerEase { EasingMode = EasingMode },
+                    AutoReverse = this.AutoReverse,
+                };
+                Storyboard.SetTargetName(scaleYAnimation, BreathingGlowAdorner.ScaleTransformName);
+                Storyboard.SetTargetProperty(scaleYAnimation, new PropertyPath(ScaleTransform.ScaleYProperty));
+                storyboard.Children.Add(scaleYAnimation);
+            }
+        }
+        else
+        {
+            UpdateStoryboardParameters(false);
+        }
+
+        adorner.Show();
+        storyboard.Begin(adorner, true);
+    }
+
+    private void StopAnimation()
+    {
+        // // 捕获局部变量，因为 adorner 成员可能在其他地方被置空
+        // var localAdorner = this.adorner;
+
+        // if (storyboard != null && localAdorner != null)
+        // {
+        //     storyboard.Stop(localAdorner);
+        //     storyboard.Remove(localAdorner); // 确保完全移除动画
+        // }
+
+        // // 隐藏 Adorner，并重置其内部元素的状态
+        // localAdorner?.Hide();
+        if (storyboard != null)
+        {
+            var localAdorner = this.adorner;
+            if (localAdorner != null && PresentationSource.FromVisual(localAdorner) != null)
+            {
+                storyboard.Stop(localAdorner);
+                storyboard.Remove(localAdorner);
+            }
+
+            // 隐藏 Adorner，并重置其内部元素的状态
+            localAdorner?.Hide();
+        }
+    }
+
+    private void UpdateStoryboardParameters(bool restart = false)
+    {
+        if (storyboard == null || adorner == null)
+        {
+            return;
+        }
+
+        var newDuration = TimeSpan.FromSeconds(Interval);
+        foreach (DoubleAnimation animation in storyboard.Children.OfType<DoubleAnimation>())
+        {
+            animation.AutoReverse = AutoReverse;
+            animation.Duration = newDuration;
+            if (animation.EasingFunction is EasingFunctionBase easingFunction)
+            {
+                easingFunction.EasingMode = EasingMode;
+            }
+
+            // 查找不透明度动画
+            if (Storyboard.GetTargetProperty(animation).Path == "Opacity")
+            {
+                animation.To = Opacity;
+            }
+        }
+
+        // 如果动画正在运行，可以重启以应用新值
+        // 只有在明确需要时才重启画板
+        if (restart && IsBreathing)
+        {
+            storyboard.Stop(adorner);
+            storyboard.Begin(adorner, true);
+        }
+    }
+
+    private void CleanupResources()
+    {
+        // 清理顺序非常重要：
+        // 1. 首先停止动画，解除动画系统对 Adorner 的引用.
+        StopAnimation();
+
+        // 2. 然后从 AdornerLayer 移除 Adorner，并调用其内部的 Detach 方法.
+        RemoveAdorner();
+
+        // 3. 最后，彻底销毁 Storyboard 对象，以防万一.
+        if (storyboard != null)
+        {
+            storyboard.Children.Clear();
+            storyboard = null;
+        }
+    }
+
+    /// <summary>
+    /// Adorner类，负责辉光效果的渲染.
+    /// </summary>
+    private class BreathingGlowAdorner : Adorner
+    {
+        public const string ScaleTransformName = "PulsatingGlowScaleTransform";
+        public const string BorderElementName = "PulsatingGlowBorderElement";
+        private readonly FrameworkElement element;
+        private readonly ScaleTransform animatedScaleTransform;
+        private FrameworkElement? associatedObject;
+        private Thickness userMargin;
+        private Thickness borderThickness;
+        private Thickness calculatedFinalMargin;
+
+        public BreathingGlowAdorner(FrameworkElement adornedElement, Brush brush, Thickness thickness, Thickness margin, CornerRadius cornerRadius)
+            : base(adornedElement)
+        {
+            NameScope.SetNameScope(this, new NameScope());
+
+            // 关键设置，确保Adorner本身不影响交互和布局
+            this.associatedObject = adornedElement;
+
+            // 使用弱事件模式替代直接订阅
+            WeakEventManager<FrameworkElement, SizeChangedEventArgs>.AddHandler(associatedObject, "SizeChanged", this.AssociatedObject_SizeChanged);
+
+            this.IsHitTestVisible = false;
+            this.ClipToBounds = false;
+            this.userMargin = margin;
+            this.borderThickness = thickness;
+
+            // 1. 在 Adorner 自己的 NameScope 中注册名称
+            this.animatedScaleTransform = new ScaleTransform(0.3, 0.3)
+            {
+                CenterX = 0.5, // 从中心缩放（关键：确保扩散效果从内向外）
+                CenterY = 0.5,
+            };
+            this.RegisterName(ScaleTransformName, this.animatedScaleTransform);
+
+            // 2. 创建辉光边框
+            element = new Border
+            {
+                BorderBrush = brush,
+                BorderThickness = thickness,
+                CornerRadius = cornerRadius, // 匹配 XAML 中的圆角
+                Opacity = 0, // 初始透明度为0，由动画驱动
+                RenderTransformOrigin = new Point(0.5, 0.5),
+                RenderTransform = animatedScaleTransform,
+            };
+            this.RegisterName(BorderElementName, element);
+            AddVisualChild(element);
+
+            // 启用硬件加速
+            RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
+            RenderOptions.SetEdgeMode(this, EdgeMode.Aliased);
+
+            if (element is Border border)
+            {
+                border.CacheMode = new BitmapCache();
+                RenderOptions.SetCachingHint(border, CachingHint.Cache);
+            }
+
+            this.UpdateFinalMargin();
+        }
+
+        public void UpdateBrush(Brush brush)
+        {
+            if (element is Border border)
+            {
+                border.BorderBrush = brush;
+            }
+        }
+
+        public void UpdateThickness(Thickness thickness)
+        {
+            if (element is Border border)
+            {
+                border.BorderThickness = thickness;
+
+                this.borderThickness = thickness; // 更新 Adorner 内部维护的 Thickness 状态
+                UpdateFinalMargin(); // 重新计算最终 Margin 并触发布局更新
+            }
+        }
+
+        public void UpdateMargin(Thickness margin)
+        {
+            this.userMargin = margin;
+            UpdateFinalMargin();
+        }
+
+        public void UpdateCornerRadius(CornerRadius cornerRadius)
+        {
+            if (element is Border border)
+            {
+                border.CornerRadius = cornerRadius;
+            }
+        }
+
+        public void Show() => this.Visibility = Visibility.Visible;
+
+        public void Hide()
+        {
+            this.Visibility = Visibility.Hidden;
+            this.animatedScaleTransform.ScaleX = 0.3;
+            this.animatedScaleTransform.ScaleY = 0.3;
+            this.element.Opacity = 0;
+        }
+
+        /// <summary>
+        /// 解除所有事件订阅和资源，为垃圾回收做准备.
+        /// </summary>
+        public void Detach()
+        {
+            if (this.associatedObject != null)
+            {
+                WeakEventManager<FrameworkElement, SizeChangedEventArgs>.RemoveHandler(associatedObject, "SizeChanged", this.AssociatedObject_SizeChanged);
+                this.associatedObject = null;
+            }
+
+            // 清除所有可视化子元素
+            RemoveVisualChild(element);
+
+            UnregisterNames();
+
+            // 释放资源
+            if (element is Border border)
+            {
+                // 清理依赖属性值，帮助垃圾回收
+                border.ClearValue(Border.BorderBrushProperty);
+                border.ClearValue(Border.BorderThicknessProperty);
+                border.ClearValue(Border.CornerRadiusProperty);
+                border.ClearValue(Border.MarginProperty); // 确保 Margin 也被清理
+                border.RenderTransform = null; // 清理 Transform
+                border.CacheMode = null; // 清理 CacheMode
+            }
+
+            // 清理 Adorner 自身的 RenderTransform 等，虽然通常 Adorner 自身没有
+            this.ClearValue(UIElement.RenderTransformProperty);
+            this.ClearValue(UIElement.VisibilityProperty); // 清理Visibility
+        }
+
+        private void UpdateFinalMargin()
+        {
+            calculatedFinalMargin = new Thickness(
+                this.userMargin.Left - (borderThickness.Left / 2),
+                this.userMargin.Top - (borderThickness.Top / 2),
+                this.userMargin.Right - (borderThickness.Right / 2),
+                this.userMargin.Bottom - (borderThickness.Bottom / 2)
+            );
+
+            // 强制重新布局
+            InvalidateArrange();
+        }
+
+        private void AssociatedObject_SizeChanged(object? sender, SizeChangedEventArgs e)
+        {
+            // 尺寸变化时，强制 Adorner 重新测量和布局
+            InvalidateMeasure();
+            InvalidateArrange();
+        }
+
+        private void UnregisterNames()
+        {
+            INameScope scope = NameScope.GetNameScope(this);
+            if (scope != null)
+            {
+                scope.UnregisterName(ScaleTransformName);
+                scope.UnregisterName(BorderElementName);
+            }
+        }
+
+        protected override int VisualChildrenCount => 1;
+
+        protected override Visual GetVisualChild(int index) => element;
+
+        protected override Size MeasureOverride(Size constraint)
+        {
+            return AdornedElement.RenderSize;
+        }
+
+        protected override Size ArrangeOverride(Size finalSize)
+        {
+            element.Margin = calculatedFinalMargin;
+            element.Arrange(new Rect(new Point(0, 0), finalSize));
+            return finalSize;
+
+            // // finalSize 是被装饰控件的实际大小 (例如 200x50)
+            //
+            // // 安全转换并获取边框厚度（非Border类型则用0）
+            // Border? border = element as Border;
+            // Thickness borderThickness = border?.BorderThickness ?? new Thickness(0);
+            //
+            // // 在 ArrangeOverride 方法中
+            // // 边框的厚度是向内外各占一半的.为了让辉光完全出现在控件外部，
+            // // 我们需要将 Margin 向外推移边框厚度的一半.
+            // var finalMargin = new Thickness(
+            //     this.margin.Left - (borderThickness.Left / 2),
+            //     this.margin.Top - (borderThickness.Top / 2),
+            //     this.margin.Right - (borderThickness.Right / 2),
+            //     this.margin.Bottom - (borderThickness.Bottom / 2)
+            // );
+            // element.Margin = finalMargin;
+            //
+            // // 将子元素（辉光边框）安排在覆盖整个被装饰控件的区域
+            // // WPF的布局系统会根据 Margin 自动将其渲染到外部
+            // element.Arrange(new Rect(new Point(0, 0), finalSize));
+            //
+            // return finalSize;
+        }
+    }
+}
+
+// 请分析存在问题和优化方案

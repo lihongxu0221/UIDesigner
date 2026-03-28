@@ -1,0 +1,28 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+///   <font size="2">Represents the method that will handle the IsPropertyExpandable event.</font>
+/// </summary>
+/// <param name="sender">sendr.</param>
+/// <param name="e">e.</param>
+public delegate void IsPropertyExpandableHandler(object sender, IsPropertyExpandableArgs e);
+
+/// <summary>
+/// Provides informations related to the expandable status of a propertyItem in a PropertyGrid.
+/// </summary>
+public class IsPropertyExpandableArgs : PropertyArgs
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether if the PropertyItem will be expandable or not.
+    /// </summary>
+    public bool IsExpandable { get; set; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="IsPropertyExpandableArgs"/> class.
+    /// </summary>
+    /// <param name="pd">pd.</param>
+    public IsPropertyExpandableArgs(PropertyDescriptor pd)
+        : base(pd)
+    {
+    }
+}

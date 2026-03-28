@@ -1,0 +1,19 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Converters;
+
+/// <summary>
+/// 自定义属性项转换器.
+/// </summary>
+public class IsCustomPropertyItemConverter : IValueConverter
+{
+    /// <inheritdoc/>
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        return value is CustomPropertyItem;
+    }
+
+    /// <inheritdoc/>
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}

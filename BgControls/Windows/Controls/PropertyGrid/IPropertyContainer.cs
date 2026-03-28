@@ -1,0 +1,103 @@
+using BgControls.Windows.Controls.PropertyGrid;
+
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// 定义属性容器行为的接口.
+/// </summary>
+internal interface IPropertyContainer
+{
+    /// <summary>
+    /// Gets 容器辅助类实例.
+    /// </summary>
+    ContainerHelperBase ContainerHelper { get; }
+
+    /// <summary>
+    /// Gets 默认的编辑器定义.
+    /// </summary>
+    EditorDefinitionBase DefaultEditorDefinition { get; }
+
+    /// <summary>
+    /// Gets 自定义编辑器定义的集合.
+    /// </summary>
+    EditorDefinitionCollection? EditorDefinitions { get; }
+
+    /// <summary>
+    /// Gets 属性定义的集合.
+    /// </summary>
+    PropertyDefinitionCollection? PropertyDefinitions { get; }
+
+    /// <summary>
+    /// Gets 用于类别分组的描述对象.
+    /// </summary>
+    GroupDescription CategoryGroupDescription { get; }
+
+    /// <summary>
+    /// Gets 类别分组定义的集合.
+    /// </summary>
+    CategoryDefinitionCollection? CategoryDefinitions { get; }
+
+    /// <summary>
+    /// Gets 应用于属性项容器的样式.
+    /// </summary>
+    Style? PropertyContainerStyle { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 是否按类别显示.
+    /// </summary>
+    bool IsCategorized { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 是否按字母顺序排序.
+    /// </summary>
+    bool IsSortedAlphabetically { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 是否自动生成属性.
+    /// </summary>
+    bool AutoGenerateProperties { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 是否隐藏继承的属性.
+    /// </summary>
+    bool HideInheritedProperties { get; }
+
+    /// <summary>
+    /// Gets 当前的过滤信息.
+    /// </summary>
+    FilterInfo FilterInfo { get; }
+
+    /// <summary>
+    /// Gets 用于Gets 属性名称的绑定对象.
+    /// </summary>
+    Binding? PropertyNameBinding { get; }
+
+    /// <summary>
+    /// Gets 用于Gets 属性值的绑定对象.
+    /// </summary>
+    Binding? PropertyValueBinding { get; }
+
+    /// <summary>
+    /// Gets 具有依赖关系的属性项列表.
+    /// </summary>
+    List<KeyValuePair<string, PropertyItem>> DependsOnPropertyItemsList { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 是否展开非基元类型属性.
+    /// </summary>
+    bool IsExpandingNonPrimitiveTypes { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether 确定指定的属性是否可见.
+    /// </summary>
+    /// <param name="pd">属性描述.</param>
+    /// <returns>返回是否可见.</returns>
+    bool? IsPropertyVisible(PropertyDescriptor pd);
+
+    /// <summary>
+    /// 确定指定的属性是否可展开.
+    /// </summary>
+    /// <param name="pd">属性描述.</param>
+    /// <returns>返回是否可展开.</returns>
+    bool? IsPropertyExpandable(PropertyDescriptor pd);
+}

@@ -1,0 +1,70 @@
+using BgControls.Windows.Controls.PropertyGrid.Attributes;
+
+namespace BgControls.Windows.Controls.PropertyGrid.Editors;
+
+/// <summary>
+/// 基于数据源（ItemsSource）的属性编辑器，支持通过绑定外部数据源动态生成编辑控件选项，适配下拉框、多选框等列表类编辑场景.
+/// </summary>
+/// <remarks>
+/// 1. 继承自 PropertyGrid 编辑器基类 <see cref="TypeEditor{T}"/>（T 为列表类控件，如下拉框、多选组合框），深度适配 PropertyGrid 编辑体系；
+/// 2. 核心特性：通过特性或配置指定外部数据源（ItemsSource），动态生成编辑控件的选项列表，无需硬编码选项，提升复用性；
+/// 3. 数据源支持多种形式：静态集合（如 List&lt;string&gt;）、枚举类型、数据库查询结果、IEnumerable 接口实现类等；
+/// 4. 支持自定义选项的显示名称与值字段映射（如通过 DisplayMemberPath、ValueMemberPath 配置），适配不同数据源模型；
+/// 5. 自动关联属性的只读状态，支持双向绑定，适配 PropertyGrid 核心编辑流程，常用于动态选项的文本选择、多值选择等场景.
+/// </remarks>
+public class ItemsSourceAttributeEditor : TypeEditor<System.Windows.Controls.ComboBox>
+{
+    private readonly ItemsSourceAttribute attribute;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ItemsSourceAttributeEditor"/> class.
+    /// </summary>
+    /// <param name="attribute">ItemsSourceAttribute.</param>
+    public ItemsSourceAttributeEditor(ItemsSourceAttribute attribute)
+    {
+        this.attribute = attribute;
+    }
+
+    /// <inheritdoc/>
+    protected override DependencyProperty SetValueDependencyProperty() => System.Windows.Controls.ComboBox.SelectedValueProperty;
+
+    /// <inheritdoc/>
+    protected override ComboBox CreateEditor()
+    {
+        return new PropertyGridEditorComboBox();
+    }
+
+    /// <inheritdoc/>
+    protected override void ResolveValueBinding(PropertyItem propertyItem)
+    {
+        this.SetItemsSource();
+        base.ResolveValueBinding(propertyItem);
+    }
+
+    /// <inheritdoc/>
+    protected override void SetControlProperties(PropertyItem propertyItem)
+    {
+        if (this.Editor != null)
+        {
+            this.Editor.DisplayMemberPath = "DisplayName";
+            this.Editor.SelectedValuePath = "Value";
+            if (propertyItem != null)
+            {
+                this.Editor.IsEnabled = !propertyItem.IsReadOnly;
+            }
+        }
+    }
+
+    private void SetItemsSource()
+    {
+        if (this.Editor != null)
+        {
+            this.Editor.ItemsSource = CreateItemsSource();
+        }
+    }
+
+    private IEnumerable? CreateItemsSource()
+    {
+        return (Activator.CreateInstance(attribute.Type) as IItemsSource)?.GetValues();
+    }
+}

@@ -1,0 +1,37 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace BgControls.Tools.Helpers;
+
+/// <summary>
+/// 一个内部辅助类，用于封装与文本格式化和测量相关的常用功能.
+/// </summary>
+internal class TextHelper
+{
+    /// <summary>
+    /// 创建一个用于精确测量或渲染的 FormattedText 对象.
+    /// 这个方法统一了文本对象的创建过程，确保了所有文本测量都使用一致的参数.
+    /// </summary>
+    /// <param name="text">需要被格式化的文本字符串.</param>
+    /// <param name="flowDirection">文本的流动方向，例如从左到右或从右到左.</param>
+    /// <param name="typeface">指定文本的字体系列、样式、粗细和拉伸度的组合.</param>
+    /// <param name="fontSize">文本的字号大小，单位为设备无关像素.</param>
+    /// <returns>一个配置好的 FormattedText 对象，可用于后续的测量和绘制操作.</returns>
+    public static FormattedText CreateFormattedText(string text, FlowDirection flowDirection, Typeface typeface, double fontSize)
+    {
+        // 实例化 FormattedText 对象，这是 WPF 中进行高级文本处理的核心类.
+        var formattedText = new FormattedText(
+            text, // 要显示的实际文本内容.
+            CultureInfo.CurrentUICulture, // 使用当前用户界面的区域性信息，以确保正确的字符渲染和断行规则.
+            flowDirection, // 应用指定的文本流向.
+            typeface, // 应用指定的字体信息.
+            fontSize, // 应用指定的字号.
+            Brushes.Black, // 指定一个默认的前景色画刷，虽然在测量时颜色不重要，但此参数是必需的.
+            DpiHelper.DeviceDpiX); // 提供当前系统的 DPI 信息，以确保文本尺寸能够正确缩放，像素精准.
+
+        return formattedText;
+    }
+}

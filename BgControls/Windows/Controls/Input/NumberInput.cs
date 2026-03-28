@@ -1,0 +1,626 @@
+using BgControls.Windows.Datas;
+
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 一个支持键盘、鼠标滚轮、触摸小键盘输入的数字输入控件.
+/// Value, Maximum, Minimum 属性已修改为可空类型.
+/// </summary>
+[TemplatePart(Name = "PART_TextBox", Type = typeof(TextBox))]
+public class NumberInput : ContentControl
+{
+    private const string ElementTextBox = "PART_TextBox";
+
+    // 用于验证和过滤输入的正则表达式
+    private static readonly Regex RegexDisallowNonNumeric = new Regex("[^0-9]");
+
+    /// <summary>
+    /// 标识 DefaultValue 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty DefaultValueProperty =
+        DependencyProperty.Register("DefaultValue", typeof(double?), typeof(NumberInput), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValueChanged, CoerceValue));
+
+    /// <summary>
+    /// 依赖属性：当前值 (Value).
+    /// </summary>
+    public static readonly DependencyProperty ValueProperty =
+        DependencyProperty.Register(nameof(Value), typeof(double?), typeof(NumberInput), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnValueChanged, CoerceValue));
+
+    /// <summary>
+    /// 依赖属性：允许的最大值 (Maximum).
+    /// </summary>
+    public static readonly DependencyProperty MaximumProperty =
+        DependencyProperty.Register(nameof(Maximum), typeof(double?), typeof(NumberInput), new PropertyMetadata(null, OnMaximumChanged, CoerceMaximum)); // <--- 默认值改为 null, 移除 ValidateHelper
+
+    /// <summary>
+    /// 依赖属性：允许的最小值 (Minimum).
+    /// </summary>
+    public static readonly DependencyProperty MinimumProperty =
+        DependencyProperty.Register(nameof(Minimum), typeof(double?), typeof(NumberInput), new PropertyMetadata(null, OnMinimumChanged, CoerceMinimum)); // <--- 默认值改为 null, 移除 ValidateHelper
+
+    /// <summary>
+    /// 依赖属性：每次增/减的步长 (Increment).
+    /// </summary>
+    public static readonly DependencyProperty IncrementProperty =
+        DependencyProperty.Register(nameof(Increment), typeof(double), typeof(NumberInput), new PropertyMetadata(ValueBoxes.Double1Box));
+
+    /// <summary>
+    /// 依赖属性：显示的小数位数 (DecimalPlaces).
+    /// </summary>
+    public static readonly DependencyProperty DecimalPlacesProperty =
+        DependencyProperty.Register(nameof(DecimalPlaces), typeof(int?), typeof(NumberInput), new PropertyMetadata(2));
+
+    /// <summary>
+    /// 依赖属性：是否为只读 (IsReadOnly).
+    /// </summary>
+    public static readonly DependencyProperty IsReadOnlyProperty =
+        DependencyProperty.Register(nameof(IsReadOnly), typeof(bool), typeof(NumberInput), new PropertyMetadata(ValueBoxes.FalseBox));
+
+    /// <summary>
+    /// 路由事件：当值发生改变时触发 (ValueChanged).
+    /// </summary>
+    public static readonly RoutedEvent ValueChangedEvent =
+        EventManager.RegisterRoutedEvent(
+            nameof(ValueChanged),
+            RoutingStrategy.Bubble,
+            typeof(RoutedPropertyChangedEventHandler<double?>), // <--- 修改事件参数类型
+            typeof(NumberInput));
+
+    /// <summary>
+    /// Gets or sets 获取或设置模板中的 TextBox 控件实例.
+    /// </summary>
+    private TextBox? textBox;
+
+    /// <summary>
+    /// 一个标志位，用于防止在代码内部更新 TextBox.Text 时，触发 TextChanged 事件从而导致无限递归.
+    /// </summary>
+    private bool isUpdatingTextFromValue;
+
+    /// <summary>
+    /// 在控件获得焦点时，记录当时的值.当用户按 ESC 键时，可以恢复到这个值.
+    /// </summary>
+    private double? lastConfirmedValue;
+
+    /// <summary>
+    /// 一个标志位，用于指示小键盘输入的值是否已经被确认.
+    /// </summary>
+    private bool isKeypadValueConfirmed;
+
+    static NumberInput()
+    {
+        // 重写默认样式键，使其指向自定义的样式
+        DefaultStyleKeyProperty.OverrideMetadata(typeof(NumberInput), new FrameworkPropertyMetadata(typeof(NumberInput)));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NumberInput"/> class.
+    /// </summary>
+    public NumberInput()
+    {
+        // 添加命令绑定，用于处理自定义的增/减/清除命令
+        _ = CommandBindings.Add(new CommandBinding(ControlCommands.Prev, (s, e) => UpdateValue(false), (s, e) => e.CanExecute = !IsReadOnly));
+        _ = CommandBindings.Add(new CommandBinding(ControlCommands.Next, (s, e) => UpdateValue(true), (s, e) => e.CanExecute = !IsReadOnly));
+        _ = CommandBindings.Add(new CommandBinding(ControlCommands.Clear, (s, e) => SetCurrentValue(ValueProperty, null), (s, e) => e.CanExecute = !IsReadOnly)); // <--- 清除操作设置为 null
+    }
+
+    /// <summary>
+    /// Gets or sets 获取或设置当前控件的数值.
+    /// </summary>
+    public double? Value
+    {
+        get => (double?)GetValue(ValueProperty);
+        set => SetValue(ValueProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 获取或设置允许的最大值.
+    /// </summary>
+    public double? Maximum
+    {
+        get => (double?)GetValue(MaximumProperty);
+        set => SetValue(MaximumProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 获取或设置允许的最小值.
+    /// </summary>
+    public double? Minimum
+    {
+        get => (double?)GetValue(MinimumProperty);
+        set => SetValue(MinimumProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 获取或设置每次点击增/减按钮或使用滚轮时变化的步长.
+    /// </summary>
+    public double Increment
+    {
+        get => (double)GetValue(IncrementProperty);
+        set => SetValue(IncrementProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets 获取或设置要显示的小数位数.如果为 null，则不限制.
+    /// </summary>
+    public int? DecimalPlaces
+    {
+        get => (int?)GetValue(DecimalPlacesProperty);
+        set => SetValue(DecimalPlacesProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether gets or sets 获取或设置一个值，该值指示控件是否为只读.
+    /// </summary>
+    public bool IsReadOnly
+    {
+        get => (bool)GetValue(IsReadOnlyProperty);
+        set => SetValue(IsReadOnlyProperty, ValueBoxes.BooleanBox(value));
+    }
+
+    /// <summary>
+    /// 当控件的值发生改变时触发的事件.
+    /// </summary>
+    public event RoutedPropertyChangedEventHandler<double?> ValueChanged // <--- 修改事件参数类型
+    {
+        add => AddHandler(ValueChangedEvent, value);
+        remove => RemoveHandler(ValueChangedEvent, value);
+    }
+
+    /// <summary>
+    /// Gets 根据当前值和 DecimalPlaces 属性计算出的格式化文本.
+    /// </summary>
+    private string FormattedValueText
+    {
+        get
+        {
+            if (!Value.HasValue)
+            {
+                return string.Empty;
+            }
+
+            return DecimalPlaces.HasValue
+                ? Value.Value.ToString($"F{DecimalPlaces.Value}", CultureInfo.InvariantCulture)
+                : Value.Value.ToString(CultureInfo.InvariantCulture);
+        }
+    }
+
+    /// <summary>
+    /// 当控件应用新模板时调用.这是获取模板中子控件（如 TextBox）并附加事件处理程序的最佳位置.
+    /// </summary>
+    public override void OnApplyTemplate()
+    {
+        if (textBox != null)
+        {
+            textBox.PreviewKeyDown -= TextBox_PreviewKeyDown;
+            textBox.PreviewTextInput -= TextBox_PreviewTextInput;
+            textBox.GotFocus -= TextBox_GotFocus;
+            textBox.TextChanged -= TextBox_TextChanged;
+            textBox.LostFocus -= TextBox_LostFocus;
+            textBox.PreviewMouseLeftButtonDown -= TextBox_OnInputDown;
+            textBox.PreviewTouchDown -= TextBox_OnInputDown;
+        }
+
+        base.OnApplyTemplate();
+
+        // 从新模板中获取 TextBox 实例
+        textBox = GetTemplateChild(ElementTextBox) as TextBox;
+
+        if (textBox != null)
+        {
+            // 仅在非只读模式下才添加事件处理器
+            if (!IsReadOnly)
+            {
+                textBox.PreviewKeyDown += TextBox_PreviewKeyDown;
+                textBox.PreviewTextInput += TextBox_PreviewTextInput;
+                textBox.GotFocus += TextBox_GotFocus;
+                textBox.TextChanged += TextBox_TextChanged;
+                textBox.LostFocus += TextBox_LostFocus;
+
+                // 此事件可以确保即使用户点击一个已经获得焦点的控件，也能触发显示小键盘的逻辑.
+                textBox.PreviewMouseLeftButtonDown += TextBox_OnInputDown;
+
+                // 添加触摸事件监听
+                textBox.PreviewTouchDown += TextBox_OnInputDown;
+            }
+        }
+
+        // 初始化时，根据 Value 属性更新文本框的显示
+        UpdateTextFromValue();
+    }
+
+    /// <inheritdoc/>
+    protected override void OnMouseWheel(MouseWheelEventArgs e)
+    {
+        base.OnMouseWheel(e);
+
+        if (!IsReadOnly && textBox?.IsFocused == true)
+        {
+            // 滚轮向上滚动增加值，向下滚动减少值
+            UpdateValue(e.Delta > 0);
+            e.Handled = true; // 标记事件已处理，防止父控件继续处理
+        }
+    }
+
+    /// <summary>
+    /// 当小键盘确认一个值时，由 NumericInputPopupService 调用此方法.
+    /// </summary>
+    /// <param name="confirmedValue">小键盘确认的最终值.</param>
+    public void OnKeypadValueConfirmed(double confirmedValue)
+    {
+        try
+        {
+            isKeypadValueConfirmed = true;
+            SetCurrentValue(ValueProperty, confirmedValue);
+
+            if (textBox != null)
+            {
+                // 确认值后，让焦点回到输入框
+                _ = textBox.Focus();
+
+                // 将光标移动到文本末尾，方便用户继续输入
+                textBox.CaretIndex = textBox.Text.Length;
+            }
+        }
+        finally
+        {
+            isKeypadValueConfirmed = false;
+        }
+    }
+
+    /// <summary>
+    /// 当小键盘 Popup 因外部点击等原因关闭时，由 NumericInputPopupService 调用此方法.
+    /// 这是一个保险机制，确保在 Popup 关闭时能提交当前输入.
+    /// </summary>
+    public void OnPopupClosed()
+    {
+        // 如果焦点仍在，说明是外部点击关闭的，需要强制失焦
+        if (textBox != null && textBox.IsKeyboardFocused)
+        {
+            _ = Keyboard.Focus(null);
+        }
+    }
+
+    /// <summary>
+    /// 显示与此控件关联的数字小键盘.
+    /// </summary>
+    private void ShowKeypad()
+    {
+        if (IsReadOnly || !IsEnabled)
+        {
+            return;
+        }
+
+        // 调用服务来显示共享的小键盘 Popup
+        NumericInputPopupService.ShowPopup(this);
+    }
+
+    /// <summary>
+    /// 核心的值提交方法.它从 TextBox 的文本中解析数值，并更新 Value 属性.
+    /// 这是处理手动文本输入的统一入口，确保了逻辑的集中和清晰.
+    /// </summary>
+    private void CommitTextInput()
+    {
+        if (textBox == null || isUpdatingTextFromValue)
+        {
+            return;
+        }
+
+        string text = textBox.Text;
+
+        // 如果文本为空，则将值设为 null
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            SetCurrentValue(ValueProperty, null);
+        }
+        else if (double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double parsedValue))
+        {
+            // 如果解析成功，设置属性值.CoerceValue 回调会自动处理范围限制.
+            SetCurrentValue(ValueProperty, parsedValue);
+        }
+        else
+        {
+            // 如果解析失败 (例如，文本是 "-" 或 "1.2." 或 "abc")，则恢复到上一个有效值
+            SetCurrentValue(ValueProperty, lastConfirmedValue);
+        }
+
+        // 无论提交成功与否，都调用此方法来确保文本框显示的是格式化后的正确值
+        UpdateTextFromValue();
+    }
+
+    /// <summary>
+    /// 取消文本输入，将 TextBox 恢复到上次确认的值.通常由按 ESC 键触发.
+    /// </summary>
+    private void CancelTextInput()
+    {
+        SetCurrentValue(ValueProperty, lastConfirmedValue);
+        UpdateTextFromValue();
+    }
+
+    /// <summary>
+    /// 增加或减少控件的值.
+    /// </summary>
+    /// <param name="isIncrement">为 true 则增加，为 false 则减少.</param>
+    private void UpdateValue(bool isIncrement)
+    {
+        if (IsReadOnly)
+        {
+            return;
+        }
+
+        // 在增/减值之前，先提交当前可能未确认的文本输入
+        CommitTextInput();
+
+        // 如果当前值为 null，则从 0 开始计算
+        double currentValue = Value ?? 0;
+        double newValue = isIncrement ? currentValue + Increment : currentValue - Increment;
+
+        SetCurrentValue(ValueProperty, newValue);
+
+        // 增减后，全选文本方便用户继续输入
+        textBox?.SelectAll();
+    }
+
+    /// <summary>
+    /// 从 Value 属性更新 TextBox 的显示文本.这是数据到视图 (Model -> View) 的单向更新.
+    /// </summary>
+    private void UpdateTextFromValue()
+    {
+        if (IsReadOnly)
+        {
+            return;
+        }
+
+        string formattedText = FormattedValueText;
+
+        // 使用 isUpdatingTextFromValue 标志位防止 TextChanged 事件的递归触发
+        isUpdatingTextFromValue = true;
+        if (this.textBox != null)
+        {
+            this.textBox.Text = formattedText;
+        }
+
+        isUpdatingTextFromValue = false;
+    }
+
+    /// <summary>
+    /// 处理 TextBox 的键盘按下事件.
+    /// </summary>
+    private void TextBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (IsReadOnly)
+        {
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case Key.Up: // 向上箭头键增加值
+                UpdateValue(true);
+                e.Handled = true;
+                break;
+            case Key.Down: // 向下箭头键减少值
+                UpdateValue(false);
+                e.Handled = true;
+                break;
+            case Key.Enter: // 回车键提交值并移到下一个控件
+                CommitTextInput();
+                NumericInputPopupService.HidePopup(); // 回车后关闭小键盘并移动焦点
+                _ = (sender as UIElement)?.MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+                e.Handled = true;
+                break;
+            case Key.Escape: // Esc 键取消输入，恢复原值
+                CancelTextInput();
+                NumericInputPopupService.HidePopup(); // Esc 键关闭小键盘
+                e.Handled = true;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 处理 TextBox 的文本输入事件，用于在输入时进行实时过滤.
+    /// </summary>
+    private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+    {
+        if (this.IsReadOnly)
+        {
+            e.Handled = true;
+            return;
+        }
+
+        var tb = (TextBox)sender;
+        string currentText = tb.Text;
+        string newChar = e.Text;
+
+        // 规则 1: 处理负号 '-'
+        // 允许输入负号的条件是 Minimum 未设置或小于 0
+        if (newChar == "-")
+        {
+            if ((!Minimum.HasValue || Minimum.Value < 0) == false)
+            {
+                e.Handled = true; // 如果最小值为正数或0，则阻止输入负号
+                return;
+            }
+
+            if (currentText.Contains('-') || (tb.SelectionLength == 0 && tb.CaretIndex > 0))
+            {
+                e.Handled = true; // 已有负号或负号不在开头，则阻止输入
+            }
+
+            return;
+        }
+
+        // 规则 2: 处理小数点 '.'
+        if (newChar == ".")
+        {
+            if ((DecimalPlaces.HasValue && DecimalPlaces.Value == 0) || currentText.Contains('.'))
+            {
+                e.Handled = true; // 不允许小数或已有小数点，则阻止输入
+            }
+
+            return;
+        }
+
+        // 规则 3: 过滤所有非数字字符
+        if (RegexDisallowNonNumeric.IsMatch(newChar))
+        {
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// 当 TextBox.Text 改变时触发.主要用于配合 isUpdatingTextFromValue 标志位防止递归.
+    /// </summary>
+    private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        // 当用户通过键盘输入时，将新文本实时同步到小键盘的显示区
+        NumericInputPopupService.UpdateKeypadDisplay(textBox?.Text ?? string.Empty);
+
+        if (isUpdatingTextFromValue)
+        {
+            return;
+        }
+    }
+
+    /// <summary>
+    /// 当 TextBox 获得焦点时触发显示小键盘.
+    /// </summary>
+    private void TextBox_GotFocus(object sender, RoutedEventArgs e)
+    {
+        if (IsReadOnly)
+        {
+            return;
+        }
+
+        // 每次获得焦点，都记录当前值并请求显示小键盘
+        lastConfirmedValue = Value; // 1. 记录当前值，用于可能的 ESC 取消操作
+        textBox?.SelectAll();       // 2. 全选文本，方便用户直接覆盖输入
+        ShowKeypad();               // 3. 显示小键盘
+    }
+
+    /// <summary>
+    /// 当 TextBox 失去焦点时触发.
+    /// 这是提交用户输入的最佳时机.
+    /// </summary>
+    private void TextBox_LostFocus(object sender, RoutedEventArgs e)
+    {
+        // 检查焦点是否移到了 Popup 自身，如果是，则不提交也不关闭
+        // 这个检查仍然很重要，可以防止当焦点移动到小键盘自身时提交文本
+        if (NumericInputPopupService.IsMouseOverPopup())
+        {
+            return;
+        }
+
+        if (IsReadOnly)
+        {
+            return;
+        }
+
+        // 如果值是通过小键盘的 "OK" 按钮确认的，则不需要再次提交
+        if (isKeypadValueConfirmed)
+        {
+            return;
+        }
+
+        // 当焦点离开时，提交当前文本框中的值
+        CommitTextInput();
+    }
+
+    private void TextBox_OnInputDown(object? sender, InputEventArgs e)
+    {
+        // 如果事件已经被其他处理器处理过，则直接返回
+        if (e.Handled)
+        {
+            return;
+        }
+
+        // 当用户点击控件的任何区域时，都确保小键盘被显示.
+        ShowKeypad();
+    }
+
+    /// <summary>
+    /// 值改变时触发方法.
+    /// </summary>
+    /// <param name="e">值改变参数.</param>
+    protected void OnValueChanged(RoutedPropertyChangedEventArgs<double?> e)
+    {
+        RaiseEvent(e);
+    }
+
+    private static void OnValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is NumberInput control)
+        {
+            // 当 Value 属性变化时，更新 TextBox 的显示文本
+            control.UpdateTextFromValue();
+
+            // 触发值改变事件
+            var args = new RoutedPropertyChangedEventArgs<double?>((double?)e.OldValue, (double?)e.NewValue, ValueChangedEvent);
+            control.OnValueChanged(args);
+        }
+    }
+
+    private static object? CoerceValue(DependencyObject d, object baseValue)
+    {
+        if (baseValue == null)
+        {
+            return null;
+        }
+
+        var control = (NumberInput)d;
+        var value = (double)baseValue;
+
+        if (control.Maximum.HasValue)
+        {
+            value = Math.Min(control.Maximum.Value, value);
+        }
+
+        if (control.Minimum.HasValue)
+        {
+            value = Math.Max(control.Minimum.Value, value);
+        }
+
+        return value;
+    }
+
+    private static void OnMaximumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctl = (NumberInput)d;
+        ctl.CoerceValue(MinimumProperty); // 确保 Minimum 不会大于新的 Maximum
+        ctl.CoerceValue(ValueProperty);   // 强制校验当前 Value 是否在新的范围内
+    }
+
+    private static object CoerceMaximum(DependencyObject d, object baseValue)
+    {
+        var control = (NumberInput)d;
+        var maximum = (double?)baseValue;
+        var minimum = control.Minimum;
+
+        if (maximum.HasValue && minimum.HasValue && maximum.Value < minimum.Value)
+        {
+            return minimum;
+        }
+
+        return maximum;
+    }
+
+    private static void OnMinimumChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var ctl = (NumberInput)d;
+        ctl.CoerceValue(MaximumProperty); // 确保 Maximum 不会小于新的 Minimum
+        ctl.CoerceValue(ValueProperty);   // 强制校验当前 Value 是否在新的范围内
+    }
+
+    private static object CoerceMinimum(DependencyObject d, object baseValue)
+    {
+        var control = (NumberInput)d;
+        var minimum = (double?)baseValue;
+        var maximum = control.Maximum;
+
+        if (minimum.HasValue && maximum.HasValue && minimum.Value > maximum.Value)
+        {
+            return maximum;
+        }
+
+        return minimum;
+    }
+}

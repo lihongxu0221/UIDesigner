@@ -1,0 +1,67 @@
+namespace BgControls.Windows.Attach;
+
+/// <summary>
+/// 背景切换元素类，提供附加属性用于控制元素在不同状态下的背景色.
+/// </summary>
+public class BackgroundSwitchElement
+{
+    /// <summary>
+    /// 鼠标悬停时的背景属性.
+    /// </summary>
+    public static readonly DependencyProperty MouseHoverBackgroundProperty = DependencyProperty.RegisterAttached(
+        "MouseHoverBackground", typeof(Brush), typeof(BackgroundSwitchElement), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.Inherits));
+
+    /// <summary>
+    /// 设置鼠标悬停时的背景.
+    /// </summary>
+    /// <param name="element">依赖对象.</param>
+    /// <param name="value">背景画刷.</param>
+    public static void SetMouseHoverBackground(DependencyObject element, Brush value) => element.SetValue(MouseHoverBackgroundProperty, value);
+
+    /// <summary>
+    /// 获取鼠标悬停时的背景.
+    /// </summary>
+    /// <param name="element">依赖对象.</param>
+    /// <returns>背景画刷.</returns>
+    public static Brush GetMouseHoverBackground(DependencyObject element) => (Brush) element.GetValue(MouseHoverBackgroundProperty);
+
+    /// <summary>
+    /// 鼠标按下时的背景属性.
+    /// </summary>
+    public static readonly DependencyProperty MouseDownBackgroundProperty = DependencyProperty.RegisterAttached(
+        "MouseDownBackground", typeof(Brush), typeof(BackgroundSwitchElement), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.Inherits));
+
+    /// <summary>
+    /// 设置鼠标按下时的背景.
+    /// </summary>
+    /// <param name="element">依赖对象.</param>
+    /// <param name="value">背景画刷.</param>
+    public static void SetMouseDownBackground(DependencyObject element, Brush value) => element.SetValue(MouseDownBackgroundProperty, value);
+
+    /// <summary>
+    /// 获取鼠标按下时的背景.
+    /// </summary>
+    /// <param name="element">依赖对象.</param>
+    /// <returns>背景画刷.</returns>
+    public static Brush GetMouseDownBackground(DependencyObject element) => (Brush) element.GetValue(MouseDownBackgroundProperty);
+
+    /// <summary>
+    /// 默认背景属性.
+    /// </summary>
+    public static readonly DependencyProperty BackgroundProperty = DependencyProperty.RegisterAttached(
+        "Background", typeof(Brush), typeof(BackgroundSwitchElement), new FrameworkPropertyMetadata(Brushes.Transparent, FrameworkPropertyMetadataOptions.Inherits));
+
+    /// <summary>
+    /// 设置默认背景.
+    /// </summary>
+    /// <param name="element">依赖对象.</param>
+    /// <param name="value">背景画刷.</param>
+    public static void SetBackground(DependencyObject element, Brush value) => element.SetValue(BackgroundProperty, value);
+
+    /// <summary>
+    /// 获取默认背景.
+    /// </summary>
+    /// <param name="element">依赖对象.</param>
+    /// <returns>背景画刷.</returns>
+    public static Brush GetBackground(DependencyObject element) => (Brush)element.GetValue(BackgroundProperty);
+}

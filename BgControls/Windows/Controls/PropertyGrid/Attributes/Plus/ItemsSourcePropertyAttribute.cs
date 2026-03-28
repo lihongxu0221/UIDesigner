@@ -1,0 +1,27 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Attributes;
+
+/// <summary>
+/// 指定为带特性的属性提供值的属性名称.
+/// </summary>
+/// <remarks>
+/// 该特性用于建立属性间的数据关联，通常在数据绑定、控件开发等场景中使用，使框架或自定义逻辑能自动从指定属性中获取值，为目标属性提供数据支持.
+/// 例如，在自定义列表控件中，可为显示数据的属性添加此特性，指定其数据来源于另一个存储集合数据的属性.
+/// </remarks>
+[AttributeUsage(AttributeTargets.All, Inherited = true, AllowMultiple = false)]
+public class ItemsSourcePropertyAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ItemsSourcePropertyAttribute"/> class.
+    /// </summary>
+    /// <param name="propertyName">提供值的属性名称.</param>
+    public ItemsSourcePropertyAttribute(string propertyName)
+    {
+        this.PropertyName = propertyName;
+    }
+
+    /// <summary>
+    /// Gets or sets 提供值的属性名称.
+    /// </summary>
+    /// <value>提供值的属性名称.</value>
+    public string PropertyName { get; set; }
+}

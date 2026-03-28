@@ -1,0 +1,48 @@
+using BgControls.Core.Utilities;
+
+namespace BgControls.Windows.Controls.PropertyGrid.Converters;
+
+/// <summary>
+/// 确保将相同的值分配给每个选定对象共享的公共属性，并在 PropertyGrid 中显示这些对象的属性是否相同.
+/// </summary>
+public class CommonPropertyConverter : IMultiValueConverter
+{
+    private readonly TypeConverter propertyTypeConverter;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CommonPropertyConverter"/> class.
+    /// </summary>
+    /// <param name="type">属性的类型.</param>
+    internal CommonPropertyConverter(Type type)
+    {
+        this.propertyTypeConverter = TypeDescriptor.GetConverter(type);
+    }
+
+    /// <inheritdoc/>
+    public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values.Distinct().Count() > 1)
+        {
+            return null;
+        }
+
+        return values[0];
+    }
+
+    /// <inheritdoc/>
+    public object?[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        object? element = value;
+        if (GeneralUtilities.CanConvertValue(value, targetTypes[0]))
+        {
+            if (!propertyTypeConverter.CanConvertFrom(value.GetType()))
+            {
+                throw new InvalidDataException("Cannot convert from targetType.");
+            }
+
+            element = this.propertyTypeConverter.ConvertFrom(value);
+        }
+
+        return Enumerable.Repeat(element, targetTypes.Count()).ToArray();
+    }
+}

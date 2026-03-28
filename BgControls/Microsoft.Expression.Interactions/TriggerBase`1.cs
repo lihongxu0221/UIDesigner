@@ -1,0 +1,45 @@
+namespace Microsoft.Expression.Interactions;
+
+/// <summary>
+/// 表示一个可以根据条件调用操作的泛型对象基类.
+/// </summary>
+/// <typeparam name="T">此触发器可以附加到的对象类型.</typeparam>
+/// <remarks>
+/// TriggerBase 是控制操作的基类。重写 OnAttached() 和 OnDetaching() 以在 AssociatedObject 上挂载或卸载处理程序。
+/// 可以通过指定泛型参数来约束派生 TriggerBase 可附加的类型。调用 InvokeActions() 以触发与此 TriggerBase 相关联的所有操作.
+/// </remarks>
+public abstract class TriggerBase<T> : TriggerBase
+    where T : DependencyObject
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TriggerBase{T}"/> class.
+    /// </summary>
+    protected TriggerBase()
+        : base(typeof(T))
+    {
+    }
+
+    /// <summary>
+    /// Gets 触发器附加到的对象.
+    /// </summary>
+    protected new T? AssociatedObject
+    {
+        get
+        {
+            // 将基类的关联对象强制转换为泛型类型 T.
+            return base.AssociatedObject as T;
+        }
+    }
+
+    /// <summary>
+    /// Gets 关联对象的类型约束.
+    /// </summary>
+    protected sealed override Type AssociatedObjectTypeConstraint
+    {
+        get
+        {
+            // 返回基类定义的类型约束.
+            return base.AssociatedObjectTypeConstraint!;
+        }
+    }
+}

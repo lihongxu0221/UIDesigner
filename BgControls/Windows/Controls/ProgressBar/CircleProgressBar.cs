@@ -1,0 +1,255 @@
+using BgControls.Windows.Datas;
+using BgControls.Windows.Shapes;
+
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 圆形进度条控件.
+/// </summary>
+[TemplatePart(Name = IndicatorTemplateName, Type = typeof(Arc))]
+public class CircleProgressBar : RangeBase
+{
+    /// <summary>
+    /// 指示器模板名称.
+    /// </summary>
+    private const string IndicatorTemplateName = "PART_Indicator";
+
+    /// <summary>
+    /// 标识 <see cref="ArcThickness"/> 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty ArcThicknessProperty =
+        DependencyProperty.Register(
+            nameof(ArcThickness),
+            typeof(double),
+            typeof(CircleProgressBar),
+            new PropertyMetadata(ValueBoxes.Double0Box, OnArcThicknessChanged));
+
+    /// <summary>
+    /// 标识 <see cref="ShowText"/> 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty ShowTextProperty =
+        DependencyProperty.Register(
+            nameof(ShowText),
+            typeof(bool),
+            typeof(CircleProgressBar),
+            new PropertyMetadata(ValueBoxes.TrueBox));
+
+    /// <summary>
+    /// 标识 <see cref="Text"/> 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty TextProperty =
+        DependencyProperty.Register(
+            nameof(Text),
+            typeof(string),
+            typeof(CircleProgressBar),
+            new PropertyMetadata(default(string)));
+
+    /// <summary>
+    /// 标识 <see cref="IsIndeterminate"/> 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty IsIndeterminateProperty =
+        ProgressBar.IsIndeterminateProperty.AddOwner(
+            typeof(CircleProgressBar),
+            new FrameworkPropertyMetadata(ValueBoxes.FalseBox, OnIsIndeterminateChanged));
+
+    /// <summary>
+    /// Initializes static members of the <see cref="CircleProgressBar"/> class.
+    /// </summary>
+    static CircleProgressBar()
+    {
+        // 重写焦点属性，进度条默认不获取焦点
+        FocusableProperty.OverrideMetadata(typeof(CircleProgressBar), new FrameworkPropertyMetadata(ValueBoxes.FalseBox));
+
+        // 重写最大值属性，默认值为 100
+        MaximumProperty.OverrideMetadata(typeof(CircleProgressBar), new FrameworkPropertyMetadata(ValueBoxes.Double100Box));
+    }
+
+    /// <summary>
+    /// 进度条圆弧指示器实例.
+    /// </summary>
+    private Arc? indicator;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CircleProgressBar"/> class.
+    /// </summary>
+    public CircleProgressBar()
+    {
+    }
+
+    /// <summary>
+    /// Gets or sets 显示的文本内容.
+    /// </summary>
+    public string Text
+    {
+        get => (string)this.GetValue(TextProperty);
+        set => this.SetValue(TextProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 是否显示文本内容.
+    /// </summary>
+    public bool ShowText
+    {
+        get => (bool)this.GetValue(ShowTextProperty);
+        set => this.SetValue(ShowTextProperty, ValueBoxes.BooleanBox(value));
+    }
+
+    /// <summary>
+    /// Gets or sets 圆弧指示器的粗细.
+    /// </summary>
+    public double ArcThickness
+    {
+        get => (double)this.GetValue(ArcThicknessProperty);
+        set => this.SetValue(ArcThicknessProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether 是否处于不确定状态(动画模式).
+    /// </summary>
+    public bool IsIndeterminate
+    {
+        get => (bool)this.GetValue(IsIndeterminateProperty);
+        set => this.SetValue(IsIndeterminateProperty, ValueBoxes.BooleanBox(value));
+    }
+
+    /// <summary>
+    /// 计算并设置进度条指示器的结束角度.
+    /// </summary>
+    private void SetProgressBarIndicatorAngle()
+    {
+        // 检查指示器控件是否已加载
+        if (this.indicator == null)
+        {
+            return;
+        }
+
+        double min = this.Minimum;
+        double max = this.Maximum;
+        double currentVal = this.Value;
+
+        // 修复数值溢出与范围校验问题
+        // 如果数值非法，则不更新角度
+        if (double.IsNaN(currentVal) || double.IsInfinity(currentVal))
+        {
+            return;
+        }
+
+        // 确保最大值大于最小值，否则比例无意义
+        // 如果最大值小于等于最小值，角度设为 0 以避免异常
+        if (max <= min)
+        {
+            this.indicator.EndAngle = 0;
+            return;
+        }
+
+        // 计算比例并限制在 0-1 之间，防止 Value 超出范围导致图形闭合异常
+        double progressRatio = (currentVal - min) / (max - min);
+        progressRatio = Math.Max(0, Math.Min(1, progressRatio));
+
+        // 计算当前值在范围内的比例，并转换为 360 度周角的比例
+        this.indicator.EndAngle = progressRatio * 360;
+    }
+
+    /// <summary>
+    /// 在应用控件模板时调用.
+    /// </summary>
+    public override void OnApplyTemplate()
+    {
+        base.OnApplyTemplate();
+
+        // 查找并获取模板中的指示器控件
+        this.indicator = this.GetTemplateChild(IndicatorTemplateName) as Arc;
+        if (this.indicator != null)
+        {
+            // 初始化角度
+            this.indicator.StartAngle = 0;
+            this.indicator.EndAngle = 0;
+
+            // 修复 ArcThickness 初始化问题：确保模板加载后厚度同步
+            this.indicator.ArcThickness = this.ArcThickness;
+        }
+
+        // 初始化更新进度角度
+        this.SetProgressBarIndicatorAngle();
+
+        // 修复 IsIndeterminate 初始化问题：加载模板后切换到对应视觉状态
+        this.UpdateVisualStates(false);
+    }
+
+    /// <summary>
+    /// 最小值属性改变时的回调.
+    /// </summary>
+    /// <param name="oldMinimum">旧的最小值.</param>
+    /// <param name="newMinimum">新的最小值Length.</param>
+    protected override void OnMinimumChanged(double oldMinimum, double newMinimum)
+    {
+        base.OnMinimumChanged(oldMinimum, newMinimum);
+
+        // 范围变化时重新计算角度
+        this.SetProgressBarIndicatorAngle();
+    }
+
+    /// <summary>
+    /// 最大值属性改变时的回调.
+    /// </summary>
+    /// <param name="oldMaximum">旧的最大值.</param>
+    /// <param name="newMaximum">新的最大值.</param>
+    protected override void OnMaximumChanged(double oldMaximum, double newMaximum)
+    {
+        base.OnMaximumChanged(oldMaximum, newMaximum);
+
+        // 范围变化时重新计算角度
+        this.SetProgressBarIndicatorAngle();
+    }
+
+    /// <summary>
+    /// 当前进度值改变时的回调.
+    /// </summary>
+    /// <param name="oldValue">旧的进度值.</param>
+    /// <param name="newValue">新的进度值.</param>
+    protected override void OnValueChanged(double oldValue, double newValue)
+    {
+        base.OnValueChanged(oldValue, newValue);
+
+        // 进度变化时更新角度
+        this.SetProgressBarIndicatorAngle();
+    }
+
+    /// <summary>
+    /// 切换控件的视觉状态.
+    /// </summary>
+    /// <param name="useTransitions">是否使用过渡动画.</param>
+    private void UpdateVisualStates(bool useTransitions)
+    {
+        // 修复 IsIndeterminate 逻辑：根据属性值切换状态组
+        string stateName = this.IsIndeterminate ? "Indeterminate" : "Determinate";
+        VisualStateManager.GoToState(this, stateName, useTransitions);
+    }
+
+    /// <summary>
+    /// IsIndeterminate 属性改变时的回调.
+    /// </summary>
+    /// <param name="d">依赖对象.</param>
+    /// <param name="e">参数.</param>
+    private static void OnIsIndeterminateChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is CircleProgressBar bar)
+        {
+            bar.UpdateVisualStates(true);
+        }
+    }
+
+    /// <summary>
+    /// ArcThickness 属性改变时的回调.
+    /// </summary>
+    /// <param name="d">依赖对象.</param>
+    /// <param name="e">参数.</param>
+    private static void OnArcThicknessChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        // 修复 ArcThickness 逻辑：当属性改变时同步更新 Arc 控件的厚度
+        if (d is CircleProgressBar bar && bar.indicator != null)
+        {
+            bar.indicator.ArcThickness = (double)e.NewValue;
+        }
+    }
+}

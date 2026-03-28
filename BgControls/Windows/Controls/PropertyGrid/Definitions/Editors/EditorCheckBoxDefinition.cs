@@ -1,0 +1,29 @@
+using BgControls.Windows.Controls.PropertyGrid.Editors;
+
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// 允许在 PropertyGrid 中使用复选框编辑器.
+/// </summary>
+public class EditorCheckBoxDefinition : EditorBoundDefinition
+{
+    /// <summary>
+    /// Gets or sets a value indicating whether 该值指示复选框是否支持三种状态.
+    /// </summary>
+    public bool IsThreeState { get; set; }
+
+    /// <inheritdoc/>
+    /// <summary>
+    /// 生成用于编辑属性的元素.
+    /// </summary>
+    /// <param name="propertyItem">属性项.</param>
+    /// <returns>生成的编辑元素.</returns>
+    protected override FrameworkElement GenerateEditingElement(PropertyItemBase propertyItem)
+    {
+        var propertyGridEditorCheckBox = new PropertyGridEditorCheckBox();
+        propertyGridEditorCheckBox.IsThreeState = IsThreeState;
+        this.UpdateStyle(propertyGridEditorCheckBox);
+        this.UpdateBinding(propertyGridEditorCheckBox, ToggleButton.IsCheckedProperty, propertyItem);
+        return propertyGridEditorCheckBox;
+    }
+}

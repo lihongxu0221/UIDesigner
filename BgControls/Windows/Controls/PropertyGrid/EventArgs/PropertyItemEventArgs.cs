@@ -1,0 +1,53 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// 用于处理 PropertyGrid 中属性项（PropertyItem）相关路由事件的委托，定义事件处理方法的签名规范.
+/// </summary>
+/// <param name="sender">事件发送者（通常是触发事件的 PropertyGrid 控件、属性项容器或相关组件）.</param>
+/// <param name="e">事件数据对象（<see cref="PropertyItemEventArgs"/>），包含属性项实例（<see cref="PropertyItemBase"/>）、关联数据等核心上下文信息.</param>
+/// <remarks>
+/// 1. 与 <see cref="PropertyItemEventArgs"/> 强绑定，确保事件处理过程中能获取完整的属性项相关上下文；
+/// 2. 适配 WPF 路由事件模型，可用于订阅 PropertyGrid 的各类属性项事件（如属性项初始化、值变更、编辑器创建完成等）；
+/// 3. 事件处理者通过 <paramref name="e"/> 参数可访问属性项元数据、关联数据，实现个性化业务逻辑（如根据属性项类型调整编辑器样式、监听属性值变更做日志记录等）.
+/// </remarks>
+public delegate void PropertyItemEventHandler(object sender, PropertyItemEventArgs e);
+
+/// <summary>
+/// PropertyGrid 控件中与属性项（PropertyItem）相关的路由事件数据类，封装事件触发时的核心上下文信息.
+/// </summary>
+/// <remarks>
+/// 1. 继承自 <see cref="RoutedEventArgs"/>，支持 WPF 路由事件机制（冒泡/隧道/直接路由），可在控件树中传递；
+/// 2. 核心作用：为 PropertyGrid 的属性项相关事件（如属性项初始化、值变更、编辑器创建等）提供数据载体，传递属性项实例、关联数据等关键信息；
+/// 3. 不可变设计：属性均为只读，事件触发后上下文信息不会被篡改，确保数据一致性；
+/// 4. 适配 PropertyGrid 体系：与 <see cref="PropertyItemBase"/> 强关联，是属性项事件处理的核心数据模型.
+/// </remarks>
+public class PropertyItemEventArgs : RoutedEventArgs
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PropertyItemEventArgs"/> class.
+    /// </summary>
+    /// <param name="routedEvent">当前触发的路由事件（如 PropertyItemInitializedEvent、PropertyItemValueChangedEvent）.</param>
+    /// <param name="source">事件源对象（通常是触发事件的 PropertyGrid 控件或属性项容器）.</param>
+    /// <param name="propertyItem">关联的属性项基础实例（<see cref="PropertyItemBase"/>），包含属性元数据、编辑状态等核心信息.</param>
+    /// <param name="item">与事件相关的关联数据（如属性项对应的值、编辑器控件实例等，具体含义由事件类型决定）.</param>
+    /// <exception cref="ArgumentNullException">当 routedEvent、source 或 propertyItem 为 null 时抛出.</exception>
+    public PropertyItemEventArgs(RoutedEvent routedEvent, object source, PropertyItemBase propertyItem, object item)
+        : base(routedEvent, source)
+    {
+        PropertyItem = propertyItem ?? throw new ArgumentNullException(nameof(propertyItem), "属性项实例不能为空.");
+        Item = item ?? throw new ArgumentNullException(nameof(item), "关联数据不能为空.");
+    }
+
+    /// <summary>
+    /// Gets 触发事件的属性项基础实例，包含属性的元数据（如名称、类型、只读状态）、编辑配置等核心信息.
+    /// </summary>
+    public PropertyItemBase PropertyItem { get; }
+
+    /// <summary>
+    /// Gets 与事件相关的关联数据，具体含义由触发的路由事件类型决定：
+    /// - 若为属性值变更事件：可能是属性的新值/旧值；
+    /// - 若为编辑器创建事件：可能是生成的编辑器控件实例；
+    /// - 若为属性项初始化事件：可能是属性项对应的数据源对象.
+    /// </summary>
+    public object Item { get; }
+}

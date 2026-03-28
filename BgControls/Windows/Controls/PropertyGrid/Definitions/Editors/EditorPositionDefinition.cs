@@ -1,0 +1,114 @@
+using BgControls.Windows.Controls.PropertyGrid.Editors;
+
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// 允许在 PropertyGrid 中使用位置编辑器.
+/// </summary>
+public class EditorPositionDefinition : EditorBoundDefinition
+{
+    /// <summary>
+    /// 标识 PickUpCommand 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty PickUpCommandProperty =
+        PropertyGridEditorPosition.PickUpCommandProperty.AddOwner(typeof(EditorPositionDefinition));
+
+    /// <summary>
+    /// 标识 LocateCommand 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty LocateCommandProperty =
+        PropertyGridEditorPosition.LocateCommandProperty.AddOwner(typeof(EditorPositionDefinition));
+
+    /// <summary>
+    /// 标识 PickUpLabel 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty PickUpLabelProperty =
+        PropertyGridEditorPosition.PickUpLabelProperty.AddOwner(typeof(EditorPositionDefinition));
+
+    /// <summary>
+    /// 标识 LocateLabel 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty LocateLabelProperty =
+        PropertyGridEditorPosition.LocateLabelProperty.AddOwner(typeof(EditorPositionDefinition));
+
+    /// <summary>
+    /// 标识 IsPickUpVisible 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty IsPickUpVisibleProperty =
+        PropertyGridEditorPosition.IsPickUpVisibleProperty.AddOwner(typeof(EditorPositionDefinition));
+
+    /// <summary>
+    /// 标识 IsLocateVisible 依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty IsLocateVisibleProperty =
+        PropertyGridEditorPosition.IsLocateVisibleProperty.AddOwner(typeof(EditorPositionDefinition));
+
+    /// <summary>
+    /// Gets or sets the command that executes the pick-up action.
+    /// </summary>
+    public ICommand PickUpCommand
+    {
+        get => (ICommand)GetValue(PickUpCommandProperty);
+        set => SetValue(PickUpCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the command that initiates a locate operation.
+    /// </summary>
+    public ICommand LocateCommand
+    {
+        get => (ICommand)GetValue(LocateCommandProperty);
+        set => SetValue(LocateCommandProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the label displayed on the Pick-Up button.
+    /// </summary>
+    public string PickUpLabel
+    {
+        get => (string)GetValue(PickUpLabelProperty);
+        set => SetValue(PickUpLabelProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets the label displayed on the Locate button.
+    /// </summary>
+    public string LocateLabel
+    {
+        get => (string)GetValue(LocateLabelProperty);
+        set => SetValue(LocateLabelProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the pick-up option is visible to the user.
+    /// </summary>
+    public bool IsPickUpVisible
+    {
+        get => (bool)GetValue(IsPickUpVisibleProperty);
+        set => SetValue(IsPickUpVisibleProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the Locate button is visible in the user interface.
+    /// </summary>
+    public bool IsLocateVisible
+    {
+        get => (bool)GetValue(IsLocateVisibleProperty);
+        set => SetValue(IsLocateVisibleProperty, value);
+    }
+
+    /// <inheritdoc/>
+    protected override FrameworkElement? GenerateEditingElement(PropertyItemBase propertyItem)
+    {
+        var editor = new PropertyGridEditorPosition();
+        this.UpdateProperty(editor, PropertyGridEditorPosition.PickUpCommandProperty, PickUpCommandProperty);
+        this.UpdateProperty(editor, PropertyGridEditorPosition.LocateCommandProperty, LocateCommandProperty);
+        this.UpdateProperty(editor, PropertyGridEditorPosition.PickUpLabelProperty, PickUpLabelProperty);
+        this.UpdateProperty(editor, PropertyGridEditorPosition.LocateLabelProperty, LocateLabelProperty);
+        this.UpdateProperty(editor, PropertyGridEditorPosition.IsPickUpVisibleProperty, IsPickUpVisibleProperty);
+        this.UpdateProperty(editor, PropertyGridEditorPosition.IsLocateVisibleProperty, IsLocateVisibleProperty);
+        this.UpdateStyle(editor);
+        this.UpdateBinding(editor, PropertyGridEditorPosition.ValueProperty, propertyItem);
+        return editor;
+    }
+}

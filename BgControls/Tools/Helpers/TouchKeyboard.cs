@@ -1,0 +1,730 @@
+namespace BgControls.Tools.Helpers;
+
+public static class TouchKeyboard
+{
+    // 标记是否由触摸事件触发了焦点
+    private static bool isTouchFocus = false;
+
+    public static readonly DependencyProperty IsEnabledProperty =
+        DependencyProperty.RegisterAttached("IsEnabled", typeof(bool), typeof(TouchKeyboard), new PropertyMetadata(false, OnIsEnabledChanged));
+
+    public static bool GetIsEnabled(DependencyObject obj)
+    {
+        return (bool)obj.GetValue(IsEnabledProperty);
+    }
+
+    public static void SetIsEnabled(DependencyObject obj, bool value)
+    {
+        obj.SetValue(IsEnabledProperty, value);
+    }
+
+    private static void OnIsEnabledChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is UIElement textInput)
+        {
+            if ((bool)e.NewValue)
+            {
+                // 当属性设置为 True 时，附加事件
+                textInput.PreviewStylusDown += TextInput_PreviewStylusDown;
+                textInput.PreviewMouseDown += TextInput_PreviewMouseDown;
+                textInput.LostFocus += TextInput_LostFocus;
+            }
+            else
+            {
+                // 当属性设置为 False 时，移除事件
+                textInput.PreviewStylusDown -= TextInput_PreviewStylusDown;
+                textInput.PreviewMouseDown -= TextInput_PreviewMouseDown;
+                textInput.LostFocus -= TextInput_LostFocus;
+            }
+
+            return;
+        }
+
+    }
+
+    private static void TextInput_PreviewStylusDown(object sender, StylusDownEventArgs e)
+    {
+        Trace.WriteLine("触摸按下......");
+
+        // StylusDown 事件明确表示是触摸或笔输入
+        isTouchFocus = true;
+        TouchKeyboardService.Show();
+        TouchKeyboardService.ForceSetState(true);
+    }
+
+    private static void TextInput_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // 通常 PreviewStylusDown 会先触发
+        // 如果事件是由触摸产生的，WPF 会模拟一个鼠标事件，但其 StylusDevice 不为 null
+        if (e.StylusDevice == null)
+        {
+            Trace.WriteLine("鼠标按下触发......");
+            // 这是真正的鼠标点击，我们不希望弹出键盘
+            if (isTouchFocus)
+            {
+                isTouchFocus = false;
+
+                // 为了确保之前可能由触摸弹出的键盘被关闭，我们在这里调用 Hide().
+                // Hide();
+                TouchKeyboardService.Hide();
+                TouchKeyboardService.ForceSetState(false);
+            }
+        }
+        else
+        {
+            Trace.WriteLine("触摸按下触发......");
+        }
+    }
+
+    private static void TextInput_LostFocus(object sender, RoutedEventArgs e)
+    {
+        // 只有当焦点是由触摸获得时，失去焦点才隐藏键盘
+        // 这样避免了鼠标操作时意外关闭键盘
+        if (isTouchFocus)
+        {
+            // Hide();
+            TouchKeyboardService.Hide();
+            isTouchFocus = false; // 重置标记
+            TouchKeyboardService.ForceSetState(false);
+            Trace.WriteLine($"控件{((FrameworkElement?)sender)?.Name}失去焦点, 失焦前被触摸获得焦点......");
+            return;
+        }
+
+        Trace.WriteLine($"控件{((FrameworkElement?)sender)?.Name}失去焦点......");
+    }
+
+    /// <summary>
+    /// 通过 COM 接口访问 Windows 触摸键盘（TabTip.exe）.
+    /// 这是显示和隐藏触摸键盘最可靠的方法.
+    /// </summary>
+    private class TouchKeyboardService
+    {
+        private const string KeyboardWindowClass = "ApplicationFrameInputSinkWindow"; // Windows11 用Spy获取到的类名
+        private const string ControllerWindowClass = "Windows.UI.Core.CoreWindow"; // 新版 Windows 10/11 触摸键盘的窗口类名
+        private const string ControllerWindowClassOld = "IPTip_Main_Window"; // 旧版 Windows 触摸键盘的窗口类名
+        private const string ProcessName = "TabTip"; // 目标进程名
+
+        // COM CLSID 和 IID 定义
+        private const string IID_ITipInvocation = "37c994e7-432b-4834-a2f7-dce1f13b834b";
+        private static readonly Guid CLSID_UIHostNoLaunch = new Guid("4CE576FA-83DC-4F88-951C-9D0782B4E376");
+
+        private static IntPtr _keyboardWindowHandle = IntPtr.Zero;
+        private static string topClassName = string.Empty;
+
+        [ComImport]
+        [Guid(IID_ITipInvocation)]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        private interface ITipInvocation
+        {
+            void Toggle(IntPtr hwnd);
+        }
+
+        private static ITipInvocation? _tipInvocation;
+
+        /// <summary>
+        /// 我们自己维护的键盘可见性状态.
+        /// 这代表了我们程序“期望”的状态，而不是系统的实际状态.
+        /// </summary>
+        private static bool _isKeyboardRequestedVisible = false;
+
+        /// <summary>
+        /// 初始化 COM 接口实例.
+        /// </summary>
+        private static void Initialize()
+        {
+            if (_tipInvocation != null)
+            {
+                return;
+            }
+
+            EnsureTabTipProcessIsRunning();
+            Type? comType = Type.GetTypeFromCLSID(CLSID_UIHostNoLaunch, true);
+            _tipInvocation = (ITipInvocation?)Activator.CreateInstance(comType);
+        }
+
+        /// <summary>
+        /// 终极真相：黑箱，一个彻底的黑箱(The Final Revelation: It's a Black Box) <br/>
+        ///     一直在试图理解一个系统的内部工作原理，而这个系统从设计之初，就不希望我们去理解它. <br/>
+        ///     没有父子关系：UI窗口不是控制器窗口的子窗口. <br/>
+        ///     没有所有权关系：UI窗口不被控制器窗口所拥有. <br/>
+        ///     没有稳定的进程关系：UI窗口由系统核心进程托管，而不是TabTip.exe. <br/>
+        ///     没有独特的外观：UI窗口的类名、尺寸、样式都可能与其他系统组件重复. <br/>
+        /// 获取我们程序内部记录的键盘状态. <br/>
+        /// 核心缺陷是：如果用户通过我们程序之外的方式改变了键盘状态（例如，用鼠标点击键盘右上角的关闭按钮），我们的 _isKeyboardRequestedVisible 状态就会与现实脱节. <br/>
+        /// </summary>
+        public static bool IsKeyboardVisible()
+        {
+            return _isKeyboardRequestedVisible;
+        }
+
+        /// <summary>
+        /// [重要] 提供一个方法来强制重置内部状态.
+        /// 当程序有理由相信状态已与实际不符时（例如，窗口失去焦点），可以调用此方法.
+        /// </summary>
+        /// <param name="isVisible">你认为键盘现在应处于的真实状态.</param>
+        public static void ForceSetState(bool isVisible)
+        {
+            _isKeyboardRequestedVisible = isVisible;
+        }
+
+        /// <summary>
+        /// 检查触摸键盘当前是否真实可见.此方法通过找到控制器窗口，然后全局扫描寻找被其“拥有”的UI窗口来做出最终判断.
+        /// </summary>
+        public static bool IsKeyboardVisible4()
+        {
+            // 步骤 1：找到“父亲”——TabTip.exe 的控制器窗口
+            var controllerHandle = FindTabTipControllerWindow();
+            if (controllerHandle == IntPtr.Zero)
+            {
+                return false; // 如果控制器都不存在，UI肯定不存在
+            }
+
+            // 步骤 2：全局扫描，寻找被这个控制器“拥有”的“孩子”
+            _keyboardWindowHandle = IntPtr.Zero;
+            IntPtr desktopHandle = NativeMethods.GetDesktopWindow();
+            _ = NativeMethods.EnumChildWindows(desktopHandle, (hwnd, lParam) => FindOwnedKeyboardUiWindowCallback(hwnd, controllerHandle), IntPtr.Zero);
+
+            return _keyboardWindowHandle != IntPtr.Zero;
+
+            /// <summary>
+            /// 寻找属于 TabTip.exe 的那个控制器窗口句柄.
+            /// </summary>
+            IntPtr FindTabTipControllerWindow()
+            {
+                IntPtr foundHandle = IntPtr.Zero;
+                _ = NativeMethods.EnumWindows(
+                    (hwnd, lParam) =>
+                {
+                    var sb = new StringBuilder(256);
+                    _ = NativeMethods.GetClassName(hwnd, sb, sb.Capacity);
+                    string className = sb.ToString();
+                    if (className == ControllerWindowClass || className == ControllerWindowClassOld)
+                    {
+                        _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+                        try
+                        {
+                            if (Process.GetProcessById((int)processId).ProcessName.Equals(ProcessName, StringComparison.OrdinalIgnoreCase))
+                            {
+                                foundHandle = hwnd;
+                                return false; // 找到即停
+                            }
+                        }
+                        catch { /* ignore */ }
+                    }
+
+                    return true;
+                }, IntPtr.Zero);
+
+                return foundHandle;
+            }
+
+            /// <summary>
+            /// 全局扫描的回调函数，寻找满足所有条件的键盘UI窗口.
+            /// </summary>
+            bool FindOwnedKeyboardUiWindowCallback(IntPtr hwnd, IntPtr ownerHwnd)
+            {
+                var sb = new StringBuilder(256);
+                _ = NativeMethods.GetClassName(hwnd, sb, sb.Capacity);
+
+                // 条件 1：类名必须是UI窗口的类名
+                if (sb.ToString() == KeyboardWindowClass)
+                {
+                    _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+                    try
+                    {
+                        Process process = Process.GetProcessById((int)processId);
+
+                        // 找到了！保存句柄并停止遍历
+                        Trace.TraceInformation($"[*] 进程{processId.ToString("X2")} {process.ProcessName} , 类 {KeyboardWindowClass} 获取到句柄：{hwnd.ToString("X2")}");
+
+                        // 条件 2：物理尺寸必须足够大
+                        if (NativeMethods.GetWindowRect(hwnd, out RECT rect))
+                        {
+                            if ((rect.Right - rect.Left) > 100 && (rect.Bottom - rect.Top) > 100)
+                            {
+                                // 条件 3 (最终裁决)：窗口的所有者必须是TabTip的控制器窗口
+                                // 无论TabTip.exe进程是否存在，返回的都是空值.
+                                IntPtr owner = NativeMethods.GetWindow(hwnd, NativeMethods.GW_OWNER);
+                                Trace.TraceInformation($"[*****] TabTip.exe进程{ownerHwnd.ToString("X2")} 父进程{owner.ToString("X2")} 进程{processId.ToString("X2")} {process.ProcessName} , 类{KeyboardWindowClass} , 获取到句柄：{hwnd.ToString("X2")}");
+                                if (ownerHwnd != IntPtr.Zero && owner == ownerHwnd)
+                                {
+                                    // _keyboardWindowHandle = hwnd;
+                                    // return false; // 找到了！停止遍历
+                                }
+                            }
+                        }
+                    }
+                    catch (ArgumentException) { /* 忽略进程已退出的情况 */ }
+                }
+
+                return true; // 继续遍历
+            }
+        }
+
+        /// <summary>
+        /// 检查触摸键盘当前是否真实可见.
+        /// 此方法通过全局扫描桌面所有子窗口，并结合进程名来精确查找键盘的真实UI窗口.
+        /// 这是最可靠的方法，可以穿透UIPI权限限制.
+        /// </summary>
+        public static bool IsKeyboardVisible3()
+        {
+            _keyboardWindowHandle = IntPtr.Zero;
+
+            // --- 最终的、最强大的查找方法：从桌面窗口开始，遍历所有后代窗口 ---
+            IntPtr desktopHandle = NativeMethods.GetDesktopWindow();
+            _ = NativeMethods.EnumChildWindows(desktopHandle, FindKeyboardUiWindowCallback, IntPtr.Zero);
+
+            if (_keyboardWindowHandle != IntPtr.Zero)
+            {
+                return true;
+            }
+
+            return false;
+
+            /// <summary>
+            /// EnumChildWindows的回调函数，用于在全局窗口中查找我们的目标.
+            /// </summary>
+            bool FindKeyboardUiWindowCallback(IntPtr hwnd, IntPtr lParam)
+            {
+                var sb = new StringBuilder(256);
+                _ = NativeMethods.GetClassName(hwnd, sb, sb.Capacity);
+
+                // 1. 必须同时满足类名 ---
+                if (sb.ToString() == KeyboardWindowClass)
+                {
+                    _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+                    try
+                    {
+                        Process process = Process.GetProcessById((int)processId);
+
+                        // 找到了！保存句柄并停止遍历
+                        Trace.TraceInformation($"[*] 进程{processId.ToString("X2")} {process.ProcessName} , 类 {KeyboardWindowClass} 获取到句柄：{hwnd.ToString("X2")}");
+
+                        // 条件2：检查物理尺寸
+                        if (NativeMethods.GetWindowRect(hwnd, out var rect))
+                        {
+                            int width = rect.Right - rect.Left;
+                            int height = rect.Bottom - rect.Top;
+
+                            // 最终的、无可辩驳的判断：一个可见的键盘一定有足够大的尺寸
+                            const int minimumVisibleSize = 150;
+                            if (width > minimumVisibleSize && height > minimumVisibleSize)
+                            {
+                                // 条件 3：行为签名必须是“不可激活”
+                                long exStyle = NativeMethods.GetWindowLongPtr(hwnd, NativeMethods.GWL_EXSTYLE).ToInt64();
+
+                                Trace.TraceInformation($"[***************] 进程{processId.ToString("X2")} {process.ProcessName} , 类{KeyboardWindowClass} ,样式{exStyle} 获取到句柄：{hwnd.ToString("X2")}");
+                                if ((exStyle & NativeMethods.WS_EX_NOACTIVATE) == NativeMethods.WS_EX_NOACTIVATE)
+                                {
+                                    // 三位一体，全部满足！我们找到了最终的目标！
+                                    // _keyboardWindowHandle = hwnd;
+                                    // return false; // 停止遍历
+                                }
+                            }
+                        }
+
+                        // if (process.ProcessName.Equals(ProcessName, StringComparison.OrdinalIgnoreCase))
+                        // {
+                        //     // 两个条件都满足，我们找到了最终的目标！
+                        //     // _keyboardWindowHandle = hwnd;
+                        //     // return false; // 停止遍历
+                        // }
+                    }
+                    catch (ArgumentException) { /* 忽略进程已退出的情况 */ }
+                }
+
+                return true; // 继续遍历
+            }
+        }
+
+        /// <summary>
+        /// 检查触摸键盘当前是否真实可见.
+        /// 此方法通过遍历所有窗口及其子窗口，来精确查找键盘的真实UI窗口.
+        /// </summary>
+        public static bool IsKeyboardVisible2()
+        {
+            bool result = false;
+            _keyboardWindowHandle = IntPtr.Zero;
+            topClassName = string.Empty;
+
+            // 启动一个两层遍历：先遍历所有顶层窗口...
+            _ = NativeMethods.EnumWindows(FindTopLevelWindowCallback, IntPtr.Zero);
+            // 如果在任何一个顶层窗口的子孙中找到了我们的目标UI窗口，则键盘可见.
+            if (_keyboardWindowHandle != IntPtr.Zero)
+            {
+                result = true;
+            }
+            else
+            {
+                // 如果没有找到句柄，可能是键盘未运行或未显示
+                Trace.WriteLine("未找到触摸键盘窗口句柄.");
+            }
+
+            return result;
+
+            /// <summary>
+            /// EnumWindows的回调：对每个顶层窗口，启动一个子窗口遍历.
+            /// </summary>
+            bool FindTopLevelWindowCallback(IntPtr hwnd, IntPtr lParam)
+            {
+                var sbParent = new StringBuilder(256);
+                _ = NativeMethods.GetClassName(hwnd, sbParent, sbParent.Capacity);
+                topClassName = sbParent.ToString();
+
+                // ...然后对这个顶层窗口，遍历它所有的子孙窗口
+                _ = NativeMethods.EnumChildWindows(hwnd, FindChildWindowCallback, IntPtr.Zero);
+
+                // 如果在子窗口中已经找到了目标，就不需要再继续遍历其他顶层窗口了
+                if (_keyboardWindowHandle != IntPtr.Zero)
+                {
+                    return false; // 返回 false 停止 EnumWindows
+                }
+
+                return true; // 继续遍历下一个顶层窗口
+            }
+
+            /// <summary>
+            /// EnumChildWindows的回调：检查每个子窗口的类名.
+            /// </summary>
+            bool FindChildWindowCallback(IntPtr hwnd, IntPtr lParam)
+            {
+                var sb = new StringBuilder(256);
+                _ = NativeMethods.GetClassName(hwnd, sb, sb.Capacity);
+
+                // 如果类名匹配，我们就找到了！
+                if (sb.ToString() == KeyboardWindowClass)
+                {
+                    try
+                    {
+                        // 获取窗口所属的进程ID
+                        _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+
+                        // 获取进程对象
+                        Process process = Process.GetProcessById((int)processId);
+
+                        // 找到了！保存句柄并停止遍历
+                        Trace.TraceInformation($"[*]父类{topClassName} , 进程 {process.ProcessName} , 类 {KeyboardWindowClass} 获取到句柄：{hwnd.ToString("X2")}");
+
+                        // // 检查进程名是否是 "TabTip"
+                        // if (process.ProcessName.Equals(ProcessName, StringComparison.OrdinalIgnoreCase))
+                        // {
+                        //     Trace.TraceInformation($"[**********]类 {KeyboardWindowClass} 获取到句柄：{hwnd.ToString("X2")},ProcessName = {ProcessName}");
+                        //     // 找到了！保存句柄并停止遍历
+                        //     _keyboardWindowHandle = hwnd;
+                        //     return false; // 返回 false停止EnumWindows
+                        // }
+                    }
+                    catch (ArgumentException)
+                    {
+                        // 进程可能已经退出，忽略即可
+                    }
+                }
+
+                return true; // 继续遍历下一个子窗口
+            }
+        }
+
+        /// <summary>
+        /// 检查触摸键盘当前是否可见.
+        /// 这是最可靠的方法，通过遍历窗口并检查其进程名来精确定位键盘.
+        /// </summary>
+        public static bool IsKeyboardVisible1()
+        {
+            bool result = false;
+            _keyboardWindowHandle = IntPtr.Zero;
+
+            if (_keyboardWindowHandle == IntPtr.Zero)
+            {
+                // 遍历所有顶层窗口，寻找触摸键盘的句柄
+                _ = NativeMethods.EnumWindows(FindKeyboardWindowCallback, IntPtr.Zero);
+                Trace.WriteLine($"[1] 尝试获取 TabTip.exe 句柄 {_keyboardWindowHandle} ");
+            }
+
+            // 如果找到了句柄，再检查它是否可见
+            if (_keyboardWindowHandle != IntPtr.Zero)
+            {
+                // // 在 Windows 8 及以上版本，一个窗口即使可见，IsWindowVisible 也可能返回 false.
+                // if (Environment.OSVersion.Version.Major >= 8) // DWM API 在 Win 8+ 中对 Cloaked 的支持更可靠
+                // {
+                //     // 使用 DWM API 检查窗口是否被遮蔽 ---
+                //     // 我们需要通过 DwmGetWindowAttribute 检查 DWMWA_CLOAKED 属性.
+                //     // 如果 DWMWA_CLOAKED 为 0，表示窗口未被遮蔽，即真实可见.
+                //     // ============================================================
+                //     // int isCloaked;
+                //     // int hResult = NativeMethods.DwmGetWindowAttribute(_keyboardWindowHandle, (int)DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, out isCloaked, sizeof(int));
+                //     // if (hResult == 0) // S_OK
+                //     // {
+                //     //     result = isCloaked == 0; // 如果 isCloaked 为 0，窗口可见.
+                //     // }
+                //     // ============================================================
+                //     // --- 关键改动：检查窗口的边界矩形 ---
+                //     // TabTip在隐藏时，会将其窗口的矩形变为空（所有坐标为0）.
+                //     _ = NativeMethods.GetWindowRect(_keyboardWindowHandle, out RECT rect);
+                //     // 如果矩形是空的，则窗口不可见.
+                //     result = rect.Right > 1 && rect.Bottom > 1;
+                //     Trace.WriteLine($"Rect ({rect.Left},{rect.Top},{rect.Right},{rect.Bottom})");
+                // }
+                // else
+                // {
+                //     // --- Fallback for older systems ---
+                //     // 对于旧系统或 DWM API 调用失败的情况，回退到传统方法.
+                //     result = NativeMethods.IsWindowVisible(_keyboardWindowHandle);
+                // }
+
+                result = NativeMethods.IsWindowVisible(_keyboardWindowHandle);
+                Trace.WriteLine($"TabTip.exe 句柄 {_keyboardWindowHandle} " + (result ? "可见" : "不可见"));
+            }
+            else
+            {
+                // 如果没有找到句柄，可能是键盘未运行或未显示
+                Trace.WriteLine("未找到触摸键盘窗口句柄.");
+            }
+
+            return result;
+
+            /// <summary>
+            /// EnumWindows的回调函数
+            /// </summary>
+            bool FindKeyboardWindowCallback(IntPtr hwnd, IntPtr lParam)
+            {
+                // 获取窗口的类名
+                var sb = new StringBuilder(256);
+                _ = NativeMethods.GetClassName(hwnd, sb, sb.Capacity);
+                string className = sb.ToString();
+
+                // 检查是否是新版或旧版键盘的类名
+                if (className == ControllerWindowClass || className == ControllerWindowClassOld)
+                {
+                    // 获取窗口所属的进程ID
+                    _ = NativeMethods.GetWindowThreadProcessId(hwnd, out uint processId);
+                    try
+                    {
+                        // 获取进程对象
+                        Process process = Process.GetProcessById((int)processId);
+
+                        // 检查进程名是否是 "TabTip"
+                        if (process.ProcessName.Equals(ProcessName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            // 找到了！保存句柄并停止遍历
+                            _keyboardWindowHandle = hwnd;
+                            return false; // 返回 false停止EnumWindows
+                        }
+                    }
+                    catch (ArgumentException)
+                    {
+                        // 进程可能已经退出，忽略即可
+                    }
+                }
+
+                return true; // 继续遍历
+            }
+        }
+
+        /// <summary>
+        /// 获取与当前键盘焦点控件关联的窗口句柄 (HWND).
+        /// </summary>
+        /// <param name="focusedElement">返回当前拥有焦点的 UIElement.</param>
+        /// <returns>控件所在窗口的句柄.如果无法找到，则返回 IntPtr.Zero.</returns>
+        private static IntPtr GetFocusedControlHwnd(out IInputElement? focusedElement)
+        {
+            IntPtr hwnd = IntPtr.Zero;
+
+            focusedElement = Keyboard.FocusedElement;
+            if (focusedElement is UIElement element)
+            {
+                if (PresentationSource.FromVisual(element) is HwndSource hwndSource)
+                {
+                    hwnd = hwndSource.Handle;
+                }
+            }
+
+            // 如果找不到特定控件的句柄，回退到前台窗口
+            if (hwnd == IntPtr.Zero)
+            {
+                hwnd = NativeMethods.GetForegroundWindow();
+            }
+
+            return hwnd;
+        }
+
+        private static void EnsureTabTipProcessIsRunning()
+        {
+            if (Process.GetProcessesByName("TabTip").Length == 0)
+            {
+                // 在 64 位系统上，路径可能不同
+                string progFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+                string keyboardPath = System.IO.Path.Combine(progFiles, @"Common Files\Microsoft Shared\ink\TabTip.exe");
+
+                if (!System.IO.File.Exists(keyboardPath))
+                {
+                    progFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+                    keyboardPath = System.IO.Path.Combine(progFiles, @"Common Files\Microsoft Shared\ink\TabTip.exe");
+                }
+
+                if (System.IO.File.Exists(keyboardPath))
+                {
+                    var psi = new ProcessStartInfo(keyboardPath)
+                    {
+                        UseShellExecute = true
+                    };
+
+                    _ = Process.Start(psi);
+                }
+            }
+        }
+
+        /// <summary>
+        /// 显示触摸键盘，并将其与当前聚焦的 UI 元素窗口关联.
+        /// </summary>
+        public static void Show()
+        {
+            try
+            {
+                Trace.WriteLine("TouchKeyboard.Show()");
+
+                // 如果键盘当前不可见，才调用 Toggle 来显示它
+                if (!IsKeyboardVisible())
+                {
+                    Initialize();
+
+                    // 获取当前前台窗口的句柄.
+                    var hwnd = GetFocusedControlHwnd(out IInputElement? focusedElement);
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        // 这可以确保在 COM 调用发生时，窗口焦点状态是明确的，防止竞争条件.
+                        if (focusedElement is UIElement element)
+                        {
+                            _ = element.Focus();
+                        }
+
+                        // 调用 Toggle 方法显示触摸键盘.
+                        _tipInvocation?.Toggle(hwnd);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // 捕获异常并抛出带有详细信息的新异常.
+                throw new Exception($"使用 COM 显示触摸键盘失败: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// 隐藏触摸键盘.
+        /// </summary>
+        public static void Hide()
+        {
+            // Toggle 方法会在键盘当前可见时将其隐藏.
+            // 我们只需再次调用即可.
+            try
+            {
+                Trace.WriteLine("TouchKeyboard.Hide()");
+
+                // 如果键盘当前可见，才调用 Toggle 来隐藏它
+                if (IsKeyboardVisible())
+                {
+                    Initialize();
+
+                    // 在隐藏时，我们不需要知道键盘是否可见，
+                    // Toggle 会自动处理.传递一个有效的窗口句柄即可.
+                    var hwnd = NativeMethods.GetForegroundWindow();
+                    if (hwnd != IntPtr.Zero)
+                    {
+                        // 隐藏前可检查键盘是否可见.
+                        // 这有点棘手，目前假设再次切换即可隐藏.
+                        // 更健壮的方式可能需要检测 "IPTip_Main_Window" 的窗口可见性.
+                        _tipInvocation?.Toggle(hwnd);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"使用 COM 隐藏触摸键盘失败: {ex.Message}", ex);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 包含所需的 Win32 API 函数声明.
+    /// </summary>
+    internal static class NativeMethods
+    {
+        // 在这个最终方案中，我们只需要最基本的API
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        // Delegate and P/Invoke for EnumWindows
+        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumChildWindows(IntPtr hWndParent, EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetDesktopWindow();
+
+        // P/Invoke for window details
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        [DllImport("user32.dll")]
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        public static extern IntPtr FindWindow(string? lpClassName, string? lpWindowName);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsWindowVisible(IntPtr hWnd);
+
+        // DWM API 定义
+        [DllImport("dwmapi.dll")]
+        public static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out int pvAttribute, int cbAttribute);
+
+        // 确保存在的矩形相关API
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool IsRectEmpty([In] ref RECT lprc);
+
+        // 获取窗口扩展样式的API和常量
+        public const int GWL_EXSTYLE = -20;
+        public const long WS_EX_NOACTIVATE = 0x08000000L;
+
+        [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+        public static extern IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex);
+
+        // 获取所有者窗口的API和常量
+        public const int GW_OWNER = 4;
+
+        [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr hWnd, int uCmd);
+    }
+
+    /// <summary>
+    /// DWM 窗口属性的枚举
+    /// </summary>
+    internal enum DWMWINDOWATTRIBUTE
+    {
+        // ... 其他属性
+        DWMWA_CLOAKED = 14 // 关键属性，用于检查窗口是否被DWM遮蔽
+    }
+
+    /// <summary>
+    /// Win32 RECT 结构体
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct RECT
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+}

@@ -1,0 +1,384 @@
+namespace BgControls.Windows.Shapes;
+
+/// <summary>
+/// 表示一个圆弧形状控件.
+/// </summary>
+public sealed class Arc : Shape
+{
+    /// <summary>
+    /// 直径依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty DiameterProperty =
+        DependencyProperty.Register("Diameter", typeof(double), typeof(Arc), new PropertyMetadata(100.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 起始角度依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty StartAngleProperty =
+        DependencyProperty.Register("StartAngle", typeof(double), typeof(Arc), new PropertyMetadata(10.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 结束角度依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty EndAngleProperty =
+        DependencyProperty.Register("EndAngle", typeof(double), typeof(Arc), new PropertyMetadata(350.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 圆弧厚度依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty ArcThicknessProperty =
+        DependencyProperty.Register("ArcThickness", typeof(double), typeof(Arc), new PropertyMetadata(10.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 最大进度依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty MaximumProgressProperty =
+        DependencyProperty.Register("MaximumProgress", typeof(double), typeof(Arc), new PropertyMetadata(1.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 最小进度依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty MinimumProgressProperty =
+        DependencyProperty.Register("MinimumProgress", typeof(double), typeof(Arc), new PropertyMetadata(0.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 当前进度依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty ProgressProperty =
+        DependencyProperty.Register("Progress", typeof(double), typeof(Arc), new PropertyMetadata(1.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 端点圆角半径依赖属性.
+    /// </summary>
+    public static readonly DependencyProperty CapRadiusProperty =
+        DependencyProperty.Register("CapRadius", typeof(double), typeof(Arc), new PropertyMetadata(0.0, OnGeometryDataChanged));
+
+    /// <summary>
+    /// 标记几何图形是否需要重新计算.
+    /// </summary>
+    private bool isGeometryDirty;
+
+    /// <summary>
+    /// 存储计算生成的几何图形.
+    /// </summary>
+    private Geometry? definingGeometry;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Arc"/> class.
+    /// </summary>
+    public Arc()
+    {
+        // 初始化几何状态标记并触发首次计算.
+        this.isGeometryDirty = false;
+        this.InvalidateGeometry();
+    }
+
+    /// <summary>
+    /// Gets or sets 直径.
+    /// </summary>
+    public double Diameter
+    {
+        get { return (double)this.GetValue(DiameterProperty); }
+        set { this.SetValue(DiameterProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets 起始角度.
+    /// </summary>
+    public double StartAngle
+    {
+        get { return (double)this.GetValue(StartAngleProperty); }
+        set { this.SetValue(StartAngleProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets 结束角度.
+    /// </summary>
+    public double EndAngle
+    {
+        get { return (double)this.GetValue(EndAngleProperty); }
+        set { this.SetValue(EndAngleProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets 圆弧厚度.
+    /// </summary>
+    public double ArcThickness
+    {
+        get { return (double)this.GetValue(ArcThicknessProperty); }
+        set { this.SetValue(ArcThicknessProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets 最大进度.
+    /// </summary>
+    public double MaximumProgress
+    {
+        get { return (double)this.GetValue(MaximumProgressProperty); }
+        set { this.SetValue(MaximumProgressProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets 最小进度.
+    /// </summary>
+    public double MinimumProgress
+    {
+        get { return (double)this.GetValue(MinimumProgressProperty); }
+        set { this.SetValue(MinimumProgressProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets 当前进度值.
+    /// </summary>
+    public double Progress
+    {
+        get { return (double)this.GetValue(ProgressProperty); }
+        set { this.SetValue(ProgressProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets or sets 端点圆角半径.
+    /// </summary>
+    public double CapRadius
+    {
+        get { return (double)this.GetValue(CapRadiusProperty); }
+        set { this.SetValue(CapRadiusProperty, value); }
+    }
+
+    /// <summary>
+    /// Gets 获取定义形状的几何图形.
+    /// </summary>
+    protected override Geometry DefiningGeometry
+    {
+        get
+        {
+            // 如果几何图形为空，则执行更新逻辑.
+            if (this.definingGeometry == null)
+            {
+                this.UpdateGeometry();
+            }
+
+            return this.definingGeometry!;
+        }
+    }
+
+    /// <summary>
+    /// 当几何相关属性更改时的回调函数.
+    /// </summary>
+    private static void OnGeometryDataChanged(object sender, DependencyPropertyChangedEventArgs args)
+    {
+        if (sender is Arc arcInstance)
+        {
+            // 清除缓存，下次渲染周期会自动通过 DefiningGeometry 调用 UpdateGeometry.
+            arcInstance.definingGeometry = null;
+            arcInstance.InvalidateVisual();
+        }
+    }
+
+    /// <summary>
+    /// 使当前几何图形失效，并在下一个 UI 周期请求重新计算.
+    /// </summary>
+    private void InvalidateGeometry()
+    {
+        if (!this.isGeometryDirty)
+        {
+            this.isGeometryDirty = true;
+
+            // 异步调用更新方法以优化连续属性更改时的性能.
+            this.Dispatcher.BeginInvoke(new Action(this.UpdateGeometry), null);
+        }
+    }
+
+    /// <summary>
+    /// 执行具体的几何图形计算逻辑.
+    /// </summary>
+    private void UpdateGeometry()
+    {
+        double currentDiameter = Math.Max(0.0, this.Diameter);
+        double thickness = Math.Max(0.0, this.ArcThickness);
+
+        // 基础防御逻辑：如果直径或厚度为0，返回空的几何对象.
+        if (currentDiameter <= 0)
+        {
+            this.definingGeometry = Geometry.Empty;
+            return;
+        }
+
+        // 1. 处理进度计算中的除以零风险.
+        double progressRange = this.MaximumProgress - this.MinimumProgress;
+        double progressFactor = 0.0;
+        if (Math.Abs(progressRange) > 1e-6)
+        {
+            progressFactor = Math.Max(0.0, Math.Min(1.0, (this.Progress - this.MinimumProgress) / progressRange));
+        }
+
+        double startAngleDeg = this.StartAngle;
+        double endAngleDeg = this.EndAngle;
+        double startAngleRad = startAngleDeg / 180.0 * Math.PI;
+        double endAngleRad = endAngleDeg / 180.0 * Math.PI;
+
+        double sweepAngleRad = (endAngleRad - startAngleRad) % (Math.PI * 2.0);
+        if (sweepAngleRad < 0)
+        {
+            sweepAngleRad += Math.PI * 2.0;
+        }
+
+        // 应用进度因子.
+        sweepAngleRad *= progressFactor;
+
+        // 如果扫描角度几乎为零，则不需要绘制.
+        if (sweepAngleRad < 1e-6)
+        {
+            this.definingGeometry = Geometry.Empty;
+            return;
+        }
+
+        endAngleRad = startAngleRad + sweepAngleRad;
+        bool isLargeArc = sweepAngleRad > Math.PI;
+
+        double outerRadius = currentDiameter * 0.5;
+
+        // 2. 确保内半径不为负数.
+        double innerRadius = Math.Max(0.0, outerRadius - thickness);
+
+        Point centerPoint = new Point(outerRadius, outerRadius);
+        Size outerSize = new Size(outerRadius, outerRadius);
+        Size innerSize = new Size(innerRadius, innerRadius);
+
+        Point p1 = RadialToLinearPoint(centerPoint, startAngleRad, outerRadius);
+        Point p2 = RadialToLinearPoint(centerPoint, endAngleRad, outerRadius);
+        Point p3 = RadialToLinearPoint(centerPoint, endAngleRad, innerRadius);
+        Point p4 = RadialToLinearPoint(centerPoint, startAngleRad, innerRadius);
+
+        double capHeight = Math.Max(0.0, this.CapRadius);
+        Size capSize = new Size(thickness * 0.5, capHeight);
+        double endCapRotation = startAngleDeg + (sweepAngleRad / Math.PI * 180.0);
+
+        // 3. 构造路径逻辑.
+        PathFigure figure = new PathFigure { StartPoint = p1, IsClosed = true, IsFilled = true };
+
+        // 外圆弧段.
+        figure.Segments.Add(new ArcSegment(p2, outerSize, 0, isLargeArc, SweepDirection.Clockwise, true));
+
+        // 结束端点连接（圆角或平头）.
+        figure.Segments.Add(new ArcSegment(p3, capSize, endCapRotation, false, SweepDirection.Clockwise, true));
+
+        // 内圆弧段（如果 innerRadius 为 0，实际上会退化为连向中心点）.
+        figure.Segments.Add(new ArcSegment(p4, innerSize, 0, isLargeArc, SweepDirection.Counterclockwise, true));
+
+        // 起始端点连接.
+        figure.Segments.Add(new ArcSegment(p1, capSize, startAngleDeg, false, SweepDirection.Clockwise, true));
+
+        PathGeometry geometry = new PathGeometry();
+        geometry.Figures.Add(figure);
+
+        // 4. 冻结对象以优化跨线程性能和内存开销.
+        geometry.Freeze();
+        this.definingGeometry = geometry;
+    }
+
+    /// <summary>
+    /// 执行具体的几何图形计算和绘制逻辑.
+    /// </summary>
+    private void UpdateGeometryOld()
+    {
+        double currentDiameter = this.Diameter;
+        double currentStartAngle = this.StartAngle;
+
+        // 将角度转换为弧度.
+        double startAngleRad = currentStartAngle / 180.0 * Math.PI;
+        double endAngleRad = this.EndAngle / 180.0 * Math.PI;
+
+        // 计算扫描角度并处理 2PI 取模.
+        double sweepAngleRad = (endAngleRad - startAngleRad) % (Math.PI * 2.0);
+        sweepAngleRad += (sweepAngleRad < 0.0) ? (Math.PI * 2.0) : 0.0;
+
+        // 根据进度计算实际绘制的弧度长度.
+        double progressFactor = Math.Max(0.0, Math.Min(1.0, (this.Progress - this.MinimumProgress) / (this.MaximumProgress - this.MinimumProgress)));
+        sweepAngleRad *= progressFactor;
+        endAngleRad = startAngleRad + sweepAngleRad;
+
+        double thickness = this.ArcThickness;
+        double capHeight = Math.Max(0.0, this.CapRadius);
+        bool isLargeArc = sweepAngleRad > Math.PI;
+
+        // 计算内外半径和尺寸.
+        double outerRadius = Math.Max(0.0, currentDiameter * 0.5);
+        Size outerSize = new Size(outerRadius, outerRadius);
+        double innerRadius = Math.Max(0.0, outerRadius - thickness);
+        Size innerSize = new Size(innerRadius, innerRadius);
+
+        Point centerPoint = new Point(currentDiameter * 0.5, currentDiameter * 0.5);
+
+        // 计算路径的关键四个端点位置.
+        Point outerStartPoint = RadialToLinearPoint(centerPoint, startAngleRad, outerRadius);
+        Point outerEndPoint = RadialToLinearPoint(centerPoint, endAngleRad, outerRadius);
+        Point innerEndPoint = RadialToLinearPoint(centerPoint, endAngleRad, innerRadius);
+        Point innerStartPoint = RadialToLinearPoint(centerPoint, startAngleRad, innerRadius);
+
+        // 计算端点连接处的尺寸和旋转角度.
+        Size capSize = new Size(thickness * 0.5, capHeight);
+        double endCapRotation = currentStartAngle + (sweepAngleRad / Math.PI * 180.0);
+
+        // 构建路径几何图形.
+        PathGeometry arcPathGeometry = new PathGeometry();
+        arcPathGeometry.FillRule = FillRule.Nonzero;
+        PathFigure arcFigure = new PathFigure();
+        arcFigure.StartPoint = outerStartPoint;
+
+        // 1. 绘制外圆弧.
+        arcFigure.Segments.Add(new ArcSegment
+        {
+            Size = outerSize,
+            SweepDirection = SweepDirection.Clockwise,
+            IsLargeArc = isLargeArc,
+            Point = outerEndPoint,
+        });
+
+        // 2. 绘制结束端点连接线（圆角或平头）.
+        arcFigure.Segments.Add(new ArcSegment
+        {
+            Size = capSize,
+            SweepDirection = SweepDirection.Clockwise,
+            Point = innerEndPoint,
+            RotationAngle = endCapRotation,
+        });
+
+        // 3. 绘制内圆弧.
+        arcFigure.Segments.Add(new ArcSegment
+        {
+            Size = innerSize,
+            SweepDirection = SweepDirection.Counterclockwise,
+            IsLargeArc = isLargeArc,
+            Point = innerStartPoint,
+        });
+
+        // 4. 绘制起始端点连接线.
+        arcFigure.Segments.Add(new ArcSegment
+        {
+            Size = capSize,
+            SweepDirection = SweepDirection.Clockwise,
+            Point = outerStartPoint,
+            RotationAngle = currentStartAngle,
+        });
+
+        arcPathGeometry.Figures.Add(arcFigure);
+
+        // 更新几何缓存并通知重绘.
+        this.definingGeometry = arcPathGeometry;
+        this.InvalidateVisual();
+        this.isGeometryDirty = false;
+    }
+
+    /// <summary>
+    /// 将极坐标转换为笛卡尔线性坐标.
+    /// </summary>
+    /// <param name="center">中心点.</param>
+    /// <param name="angle">弧度角度.</param>
+    /// <param name="radius">半径.</param>
+    /// <returns>线性坐标点.</returns>
+    private static Point RadialToLinearPoint(Point center, double angle, double radius)
+    {
+        return new Point(center.X + (Math.Cos(angle) * radius), center.Y + (Math.Sin(angle) * radius));
+    }
+}

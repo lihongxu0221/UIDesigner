@@ -1,0 +1,35 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Attributes;
+
+/// <summary>
+/// 扩展显示名称特性，继承自 <see cref="DisplayNameAttribute"/>，用于为类、方法、属性、字段或事件指定自定义显示名称.
+/// </summary>
+/// <remarks>
+/// 1. 完全兼容 <see cref="DisplayNameAttribute"/> 的基础功能，可直接替代原生特性使用；
+/// 2. 扩展了特性的适用目标（支持类、方法、属性、字段、事件），比原生 <see cref="DisplayNameAttribute"/>（默认仅支持属性、事件）适用范围更广；
+/// 3. 常用于 UI 展示场景（如 PropertyGrid 控件显示属性名称、菜单/按钮显示文本、表单标签文本等），让代码元数据与 UI 显示文本解耦；
+/// 4. 可通过 <see cref="TypeDescriptor"/> 或反射获取特性值，实现显示文本的统一管理（如多语言适配可通过扩展该类实现）.
+/// </remarks>
+[AttributeUsage(
+    AttributeTargets.Class |
+    AttributeTargets.Method |
+    AttributeTargets.Property |
+    AttributeTargets.Field |
+    AttributeTargets.Event,
+    AllowMultiple = false, // 不允许同一目标上多次应用该特性
+    Inherited = true)] // 特性可被子类继承（如子类可继承父类的显示名称特性）
+public class ExtendedDisplayNameAttribute : DisplayNameAttribute
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExtendedDisplayNameAttribute"/> class.
+    /// </summary>
+    /// <param name="displayName">目标的自定义显示名称（将用于 UI 展示），不可为 null 或空字符串（建议）.</param>
+    public ExtendedDisplayNameAttribute(string displayName)
+        : base(displayName)
+    {
+    }
+
+    /// <summary>
+    /// Gets 目标的显示名称（重写基类属性，确保返回构造函数中指定的名称）.
+    /// </summary>
+    public override string DisplayName => this.DisplayNameValue;
+}

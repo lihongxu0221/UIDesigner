@@ -1,0 +1,20 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Commands;
+
+/// <summary>
+/// 表示与 PropertyGrid 相关的命令.
+/// </summary>
+public static class PropertyGridCommands
+{
+    private static RoutedCommand clearFilterCommand = new RoutedCommand();
+
+    /// <summary>
+    /// Gets ClearFilter 路由命令.
+    /// </summary>
+    public static RoutedCommand ClearFilter
+    {
+        get
+        {
+            return clearFilterCommand;
+        }
+    }
+}

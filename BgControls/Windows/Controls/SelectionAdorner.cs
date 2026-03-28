@@ -1,0 +1,50 @@
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 创建选择框的 Adorner.
+/// </summary>
+public class SelectionAdorner : Adorner
+{
+    private readonly Pen selectionPen;
+
+    private Point startPoint;
+    private Point endPoint;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SelectionAdorner"/> class.
+    /// </summary>
+    /// <param name="adornedElement">承载的控件容器.</param>
+    public SelectionAdorner(UIElement adornedElement)
+        : base(adornedElement)
+    {
+        selectionPen = new Pen(new SolidColorBrush(Colors.DodgerBlue), 1.0);
+        selectionPen.DashStyle = new DashStyle(new double[] { 5, 2 }, 0);
+        this.IsHitTestVisible = false; // 确保装饰器不会捕获鼠标事件
+    }
+
+    /// <summary>
+    /// 更新框选区域.
+    /// </summary>
+    /// <param name="startPoint">起点.</param>
+    /// <param name="endPoint">终点.</param>
+    public void UpdateSelection(Point startPoint, Point endPoint)
+    {
+        this.startPoint = startPoint;
+        this.endPoint = endPoint;
+        this.InvalidateVisual(); // 请求重绘
+    }
+
+    /// <inheritdoc/>
+    protected override void OnRender(DrawingContext drawingContext)
+    {
+        base.OnRender(drawingContext);
+        if (startPoint != endPoint)
+        {
+            drawingContext.DrawRectangle(
+                new SolidColorBrush(Color.FromArgb(40, 0, 120, 215)), // 半透明填充
+                selectionPen,
+                new Rect(startPoint, endPoint)
+            );
+        }
+    }
+}

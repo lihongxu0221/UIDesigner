@@ -1,0 +1,23 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Attributes;
+
+/// <summary>
+/// Specifies the input direction for the decorated property.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+public class InputDirectionAttribute : Attribute
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InputDirectionAttribute" /> class.
+    /// </summary>
+    /// <param name="inputDirection">The input direction.</param>
+    public InputDirectionAttribute(InputDirection inputDirection)
+    {
+        this.InputDirection = inputDirection;
+    }
+
+    /// <summary>
+    /// Gets or sets the input direction.
+    /// </summary>
+    /// <value>The input direction.</value>
+    public InputDirection InputDirection { get; set; }
+}

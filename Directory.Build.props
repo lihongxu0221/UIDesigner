@@ -50,7 +50,7 @@
     <!--确保在编译 XAML 等标记文件时能够正确解析相关的 NuGet 包引用-->
     <IncludePackageReferencesDuringMarkupCompilation>true</IncludePackageReferencesDuringMarkupCompilation>
     <!--把NuGet包放到项目中-->
-    <RestorePackagesPath>..\..\packages</RestorePackagesPath>
+    <RestorePackagesPath>..\packages</RestorePackagesPath>
 
     <!-- 强制复制所有 NuGet 依赖到输出目录 -->
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>

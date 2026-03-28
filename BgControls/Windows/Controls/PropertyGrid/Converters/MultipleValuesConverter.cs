@@ -1,0 +1,26 @@
+namespace BgControls.Windows.Controls.PropertyGrid.Converters;
+
+/// <summary>
+/// 多值转换器，将多个输入值转换为对象数组.
+/// </summary>
+internal class MultipleValuesConverter : IMultiValueConverter
+{
+    /// <inheritdoc/>
+    public object? Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+
+        object[] array = new object[values.Length];
+        Array.Copy(values, array, values.Length);
+        return array;
+    }
+
+    /// <inheritdoc/>
+    public object?[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+    {
+        return (object?[])value;
+    }
+}

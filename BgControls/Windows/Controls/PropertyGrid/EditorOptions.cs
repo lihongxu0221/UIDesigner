@@ -1,0 +1,45 @@
+namespace BgControls.Windows.Controls.PropertyGrid;
+
+/// <summary>
+/// 表示编辑器的配置选项，包含与编辑器关联的属性描述符及各类外观、行为配置.
+/// </summary>
+public class EditorOptions
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="EditorOptions"/> class.
+    /// </summary>
+    /// <param name="descriptor">与编辑器关联的属性描述符（用于获取属性元数据、值访问等核心逻辑）.</param>
+    public EditorOptions(PropertyDescriptor descriptor)
+    {
+        this.Descriptor = descriptor;
+    }
+
+    /// <summary>
+    /// Gets 与编辑器关联的属性描述符.
+    /// </summary>
+    public PropertyDescriptor Descriptor { get; }
+
+    /// <summary>
+    /// Gets or sets 枚举类型属性可用单选按钮显示的最大值数量限制.
+    /// </summary>
+    /// <value>
+    /// 数量限制值；当枚举值数量超过该限制时，将自动使用选择器控件（如下拉框）替代单选按钮显示.
+    /// </value>
+    public int EnumAsRadioButtonsLimit { get; set; }
+
+    /// <summary>
+    /// Gets 验证错误模板.
+    /// </summary>
+    /// <value>
+    /// 用于渲染验证错误提示的 <see cref="DataTemplate"/> 为空时使用默认错误模板.
+    /// </value>
+    public DataTemplate? ValidationErrorTemplate { get; init; }
+
+    /// <summary>
+    /// Gets 验证错误样式.
+    /// </summary>
+    /// <value>
+    /// 用于设置验证错误提示外观（如颜色、字体、边框等）的 <see cref="Style"/> 为空时使用默认错误样式.
+    /// </value>
+    public Style? ValidationErrorStyle { get; init; }
+}

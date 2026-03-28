@@ -1,0 +1,113 @@
+namespace BgControls.Windows.Controls;
+
+/// <summary>
+/// 日期时间部分的类型.
+/// </summary>
+public enum DateTimePart
+{
+    /// <summary>
+    /// 日.
+    /// </summary>
+    Day,
+
+    /// <summary>
+    /// 星期名称.
+    /// </summary>
+    DayName,
+
+    /// <summary>
+    /// 上午/下午标识符.
+    /// </summary>
+    AmPmDesignator,
+
+    /// <summary>
+    /// 毫秒.
+    /// </summary>
+    Millisecond,
+
+    /// <summary>
+    /// 12 小时制的小时.
+    /// </summary>
+    Hour12,
+
+    /// <summary>
+    /// 24 小时制的小时.
+    /// </summary>
+    Hour24,
+
+    /// <summary>
+    /// 分.
+    /// </summary>
+    Minute,
+
+    /// <summary>
+    /// 月.
+    /// </summary>
+    Month,
+
+    /// <summary>
+    /// 月份名称.
+    /// </summary>
+    MonthName,
+
+    /// <summary>
+    /// 其他未指定的部分.
+    /// </summary>
+    Other,
+
+    /// <summary>
+    /// 时期.
+    /// </summary>
+    Period,
+
+    /// <summary>
+    /// 时区.
+    /// </summary>
+    TimeZone,
+
+    /// <summary>
+    /// 秒.
+    /// </summary>
+    Second,
+
+    /// <summary>
+    /// 年.
+    /// </summary>
+    Year,
+}
+
+/// <summary>
+/// 日期时间信息.
+/// </summary>
+internal class DateTimeInfo
+{
+    /// <summary>
+    /// Gets or sets 日期时间部分的内容.
+    /// </summary>
+    public string Content { get; set; }
+
+    /// <summary>
+    /// Gets or sets 格式字符串.
+    /// </summary>
+    public string Format { get; set; }
+
+    /// <summary>
+    /// Gets or sets 一个值，该值指示此部分是否为只读.
+    /// </summary>
+    public bool IsReadOnly { get; set; }
+
+    /// <summary>
+    /// Gets or sets 内容的长度.
+    /// </summary>
+    public int Length { get; set; }
+
+    /// <summary>
+    /// Gets or sets 起始位置.
+    /// </summary>
+    public int StartPosition { get; set; }
+
+    /// <summary>
+    /// Gets or sets 日期时间部分的类型.
+    /// </summary>
+    public DateTimePart Type { get; set; }
+}

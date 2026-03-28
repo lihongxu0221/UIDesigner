@@ -1,0 +1,450 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>$(DefaultTargetFramework)-windows</TargetFramework>
+		<OutputType>Library</OutputType>
+		<UseWPF>true</UseWPF>
+		<VersionPrefix>1.2.1</VersionPrefix>
+		<VersionSuffix>beta1</VersionSuffix>
+		<!-- 强制不复制所有 NuGet 依赖到输出目录 -->
+		<CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Windows\**" />
+		<EmbeddedResource Remove="Windows\**" />
+		<None Remove="Windows\**" />
+		<Page Remove="Windows\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Remove="Tools\Extension\Extensions.UIElement.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="Assets\Fonts\demo.css" />
+		<None Remove="Assets\Fonts\demo_index.html" />
+		<None Remove="Assets\Fonts\iconfont.css" />
+		<None Remove="Assets\Fonts\iconfont.js" />
+		<None Remove="Assets\Fonts\iconfont.json" />
+		<None Remove="Assets\Fonts\iconfont.svg" />
+		<None Remove="Assets\Fonts\iconfont.ttf" />
+		<None Remove="Assets\Images\CollectionControl\delete16.png" />
+		<None Remove="Assets\Images\CollectionControl\delete16_white.png" />
+		<None Remove="Assets\Images\CollectionControl\duplicate.png" />
+		<None Remove="Assets\Images\CollectionControl\duplicate_white.png" />
+		<None Remove="Assets\Images\PropertyGrid\advancedproperties11.png" />
+		<None Remove="Assets\Images\PropertyGrid\categorize16.png" />
+		<None Remove="Assets\Images\PropertyGrid\clearfilter16.png" />
+		<None Remove="Assets\Images\PropertyGrid\clearfilter16_green.png" />
+		<None Remove="Assets\Images\PropertyGrid\clearfilter16_white.png" />
+		<None Remove="Assets\Images\PropertyGrid\database11.png" />
+		<None Remove="Assets\Images\PropertyGrid\inheritance11.png" />
+		<None Remove="Assets\Images\PropertyGrid\local11.png" />
+		<None Remove="Assets\Images\PropertyGrid\resource11.png" />
+		<None Remove="Assets\Images\PropertyGrid\sortascending16.png" />
+		<None Remove="Assets\Images\PropertyGrid\sortascending16_white.png" />
+		<None Remove="Assets\Images\PropertyGrid\style11.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="Windows\Attach\AppearanceProperties.cs" />
+		<Compile Include="Windows\Attach\BackgroundSwitchElement.cs" />
+		<Compile Include="Windows\Attach\BorderElement.cs" />
+		<Compile Include="Windows\Attach\CommandProvider.cs" />
+		<Compile Include="Windows\Attach\DropDownElement.cs" />
+		<Compile Include="Windows\Attach\ElevationAssist.cs" />
+		<Compile Include="Windows\Attach\ExpanderAssist.cs" />
+		<Compile Include="Windows\Attach\IconElement.cs" />
+		<Compile Include="Windows\Attach\MenuAttach.cs" />
+		<Compile Include="Windows\Attach\MenuTopLineAttach.cs" />
+		<Compile Include="Windows\Attach\PasswordHelper.cs" />
+		<Compile Include="Windows\Attach\PressEffectHelper.cs" />
+		<Compile Include="Windows\Attach\SelectionElement.cs" />
+		<Compile Include="Windows\Attach\SelectorElement.cs" />
+		<Compile Include="Windows\Attach\ShadowAssist.cs" />
+		<Compile Include="Windows\Attach\StatusSwitchElement.cs" />
+		<Compile Include="Windows\Attach\TextBlockAttach.cs" />
+		<Compile Include="Windows\Attach\TextFieldAssist.cs" />
+		<Compile Include="Windows\Attach\SliderHelper.cs" />
+		<Compile Include="Windows\Attach\TitleElement.cs" />
+		<Compile Include="Windows\Attach\ToggleButtonAttach.cs" />
+		<Compile Include="Windows\Attach\TransitionAssist.cs" />
+		<Compile Include="Windows\Attach\ValidationAssist.cs" />
+		<Compile Include="Windows\Attach\VisualElement.cs" />
+		<Compile Include="Windows\Attach\WindowAttach.cs" />
+		<Compile Include="Windows\Automation\Peers\AutomationManager.cs" />
+		<Compile Include="Windows\Automation\Peers\ComboBoxAutomationPeer.cs" />
+		<Compile Include="Windows\Automation\Peers\GenericAutomationPeer.cs" />
+		<Compile Include="Windows\Automation\Peers\GenericTextBoxAutomationPeer.cs" />
+		<Compile Include="Windows\Automation\Peers\PropertyItemAutomationPeer.cs" />
+		<Compile Include="Windows\Behaviors\BindingProxy.cs" />
+		<Compile Include="Windows\Behaviors\BreathingGlowBehavior.cs" />
+		<Compile Include="Windows\Behaviors\TreeViewBehavior.cs" />
+		<Compile Include="Windows\Controls\Badge.cs" />
+		<Compile Include="Windows\Controls\Banner.cs" />
+		<Compile Include="Windows\Controls\ButtonGroup.cs" />
+		<Compile Include="Windows\Controls\Card.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorCanvas.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorItem.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorMode.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorPicker.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorPickerTabItem.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorSorter.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorSortingMode.cs" />
+		<Compile Include="Windows\Controls\ColorPicker\ColorSpectrumSlider.cs" />
+		<Compile Include="Windows\Controls\DashedBorder.cs" />
+		<Compile Include="Windows\Controls\DialogHost\DialogClosingEventArgs.cs" />
+		<Compile Include="Windows\Controls\DialogHost\DialogClosedEventArgs.cs" />
+		<Compile Include="Windows\Controls\DialogHost\DialogHost.cs" />
+		<Compile Include="Windows\Controls\DialogHost\DialogHostEx.cs" />
+		<Compile Include="Windows\Controls\DialogHost\DialogHostOpenDialogCommandDataContextSource.cs" />
+		<Compile Include="Windows\Controls\DialogHost\DialogOpenedEventArgs.cs" />
+		<Compile Include="Windows\Controls\DialogHost\DialogSession.cs" />
+		<Compile Include="Windows\Controls\EmptyContentControl.cs" />
+		<Compile Include="Windows\Controls\FastStarrySky.cs" />
+		<Compile Include="Windows\Controls\FileExplorer.cs" />
+		<Compile Include="Windows\Controls\PackIconKind.cs" />
+		<Compile Include="Windows\Controls\PopupEx.cs" />
+		<Compile Include="Windows\Controls\ProgressBar\CircleProgressBar.cs" />
+		<Compile Include="Windows\Controls\ProgressBar\WaveProgressBar.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\NumberPropertyConstraint.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\PositionAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorCommandDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorPositionDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\CommandEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\PositionEditor.cs" />
+		<Compile Include="Windows\Controls\Ripple.cs" />
+		<Compile Include="Windows\Attach\RippleAssist.cs" />
+		<Compile Include="Windows\Controls\SelectionAdorner.cs" />
+		<Compile Include="Windows\Controls\Selectors\ButtonGroupItemStyleSelector.cs" />
+		<Compile Include="Windows\Controls\Snackbar\ISnackbarMessageQueue.cs" />
+		<Compile Include="Windows\Controls\Snackbar\Snackbar.cs" />
+		<Compile Include="Windows\Controls\Snackbar\SnackbarActionButtonPlacementMode.cs" />
+		<Compile Include="Windows\Controls\Snackbar\SnackbarMessage.cs" />
+		<Compile Include="Windows\Controls\Snackbar\SnackbarMessageEventArgs.cs" />
+		<Compile Include="Windows\Controls\Snackbar\SnackbarMessageQueue.cs" />
+		<Compile Include="Windows\Controls\Snackbar\SnackbarMessageQueueItem.cs" />
+		<Compile Include="Windows\Controls\Snackbar\SnackbarMessageTypeConverter.cs" />
+		<Compile Include="Windows\Controls\Windows\BGWindow.cs" />
+		<Compile Include="Windows\Controls\ControlCommands.cs" />
+		<Compile Include="Windows\Controls\Loading\LoadingBase.cs" />
+		<Compile Include="Windows\Controls\Loading\LoadingCircle.cs" />
+		<Compile Include="Windows\Controls\Loading\LoadingLine.cs" />
+		<Compile Include="Windows\Controls\Panel\SimplePanel.cs" />
+		<Compile Include="Windows\Controls\Panel\SimpleStackPanel.cs" />
+		<Compile Include="Windows\Controls\Panel\TransitioningContentControl.cs" />
+		<Compile Include="Windows\Controls\ToggleBlock.cs" />
+		<Compile Include="Windows\Datas\Enums\BadgeStatus.cs" />
+		<Compile Include="Windows\Datas\Enums\DisplayStyle.cs" />
+		<Compile Include="Windows\Datas\Enums\Elevation.cs" />
+		<Compile Include="Windows\Datas\FileSystemItemInfo.cs" />
+		<Compile Include="Windows\Datas\Enums\TitlePlacementType.cs" />
+		<Compile Include="Windows\Datas\Enums\TransitionMode.cs" />
+		<Compile Include="Windows\Datas\Enums\IpType.cs" />
+		<Compile Include="Windows\Datas\Enums\LinearLayout.cs" />
+		<Compile Include="Windows\Datas\Enums\TextImageRelation.cs" />
+		<Compile Include="Windows\Datas\Enums\TextType.cs" />
+		<Compile Include="Windows\Drawing\Datas\Segment.cs" />
+		<Compile Include="Windows\EventArgs\FunctionEventArgs.cs" />
+		<Compile Include="Windows\Datas\ResourceToken.cs" />
+		<Compile Include="Windows\Datas\ValueBoxes.cs" />
+		<Compile Include="Windows\EventArgs\CancelRoutedEventArgs.cs" />
+		<Compile Include="Windows\Controls\AutoSelectBehavior.cs" />
+		<Compile Include="Windows\Controls\AutoSelectTextBox.cs" />
+		<Compile Include="Windows\Controls\CheckComboBox.cs" />
+		<Compile Include="Windows\Controls\CheckListBox.cs" />
+		<Compile Include="Windows\Controls\Chromes\ButtonChrome.cs" />
+		<Compile Include="Windows\Controls\CollectionControl\CollectionControl.cs" />
+		<Compile Include="Windows\Controls\CollectionControl\CollectionControlButton.cs" />
+		<Compile Include="Windows\Controls\CollectionControl\CollectionControlDialog.xaml.cs" />
+		<Compile Include="Windows\Controls\CollectionControl\CollectionControlDialogBase.cs" />
+		<Compile Include="Windows\Controls\CollectionControl\PrimitiveTypeCollectionControl.cs" />
+		<Compile Include="Windows\Controls\CollectionControl\PropertyGridEditorPrimitiveTypeCollectionControl.cs" />
+		<Compile Include="Windows\Controls\DateTimeInfo.cs" />
+		<Compile Include="Windows\Controls\FilePicker.cs" />
+		<Compile Include="Windows\Controls\Input\NumbericKeypad.xaml.cs" />
+		<Compile Include="Windows\Controls\Input\NumberInput.cs" />
+		<Compile Include="Windows\Controls\Input\NumericInputPopupService.cs" />
+		<Compile Include="Windows\Controls\Input\TextBoxNoKeyboard.cs" />
+		<Compile Include="Windows\Controls\Input\WatermarkPasswordBox.cs" />
+		<Compile Include="Windows\Controls\MultiLineTextEditor.cs" />
+		<Compile Include="Windows\Controls\QueryMoveFocusEventArgs.cs" />
+		<Compile Include="Windows\Controls\Underline.cs" />
+		<Compile Include="Windows\Controls\UpDown\DateTimeUpDown.cs" />
+		<Compile Include="Windows\Controls\UpDown\TimeSpanUpDown.cs" />
+		<Compile Include="Windows\Controls\WatermarkTextBox.cs" />
+		<Compile Include="Windows\EventArgs\FileDoubleClickEventArgs.cs" />
+		<Compile Include="Windows\EventArgs\FileSelectionChangedEventArgs.cs" />
+		<Compile Include="Windows\EventArgs\InputValidationErrorEventArgs.cs" />
+		<Compile Include="Windows\Input\IValidateInput.cs" />
+		<Compile Include="Windows\Input\SimpleMouseBinding.cs" />
+		<Compile Include="Windows\Markup\CornerRadiusReplacementConverterExtension.cs" />
+		<Compile Include="Windows\Markup\StringResourceExtension.cs" />
+		<Compile Include="Windows\Controls\PackIcon.cs" />
+		<Compile Include="Windows\Primitives\CachedTextInfo.cs" />
+		<Compile Include="Windows\Primitives\DateTimeUpDownBase.cs" />
+		<Compile Include="Windows\Primitives\HsvColor.cs" />
+		<Compile Include="Windows\Primitives\InputBase.cs" />
+		<Compile Include="Windows\Primitives\ItemSelectionChangedEventArgs.cs" />
+		<Compile Include="Windows\Primitives\ItemSelectionChangingEventArgs.cs" />
+		<Compile Include="Windows\Primitives\MouseWheelActiveTrigger.cs" />
+		<Compile Include="Windows\Primitives\SelectAllSelector.cs" />
+		<Compile Include="Windows\Primitives\SelectAllSelectorItem.cs" />
+		<Compile Include="Windows\Primitives\Selector.cs" />
+		<Compile Include="Windows\Primitives\SelectorItem.cs" />
+		<Compile Include="Windows\Primitives\ShapeBase.cs" />
+		<Compile Include="Windows\Primitives\UpDownBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\CategoryOrderAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\CategoryPropertyOrderAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\DefinitionKeyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\DependsOnAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\EnableToAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\ExpandableObjectAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\ExpandedCategoryAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\ExtendedDisplayNameAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\ItemsSourceAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\LocalizedCategoryAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\LocalizedDescriptionAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\LocalizedDisplayNameAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\NewItemTypesAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\AutoUpdateTextAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\BasePathPropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\CheckableItemsAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\Column.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ColumnsPropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\CommentAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ContentAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ConverterAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\DefaultExtensionPropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\DirectoryPathAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\DisplayMemberPathAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\EasyInsertAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\EditableAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\EnableByRadioButtonAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\FillTabAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\FilterPropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\FontAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\FontFamilySelectorAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\FontPreviewAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\FormatStringAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\HeaderPlacement.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\HeaderPlacementAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\HeightAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\HorizontalAlignment.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\HorizontalAlignmentAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\IndentationLevelAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\InputDirection.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\InputDirectionAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\InputFilePathAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ItemHeaderPropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ItemsSourcePropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ListAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ListItemItemsSourcePropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\OptionalAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\OptionEnableByAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\OutputFilePathAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ProgressAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ReadOnlyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\ResettableAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\SelectedValuePathAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\SelectorStyle.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\SelectorStyleAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\SlidableAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\SortIndexAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\SpinnableAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\WidePropertyAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\Plus\WidthAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\PropertyOrderAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Attributes\VisibleToAttribute.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\CollectionPropertyDescriptor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Commands\PropertyGridCommands.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Commands\PropertyItemCommands.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Containers\ContainerHelperBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Containers\ObjectContainerHelper.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Containers\ObjectContainerHelperBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Containers\ObjectsContainerHelper.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Containers\PropertiesContainerHelper.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Containers\PropertiesContainerHelperBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Containers\PropertiesSourceContainerHelper.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Controls\PropertyGridContextMenu.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Controls\PropertyItemsControl.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Controls\TrimmedTextBlock.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\CategoryExpanderConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\CommonPropertyConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\EditorTimeSpanConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\ExpandableObjectMarginConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\FileInfoToStringConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\IsCustomPropertyItemConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\IsDefaultCategoryConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\IsStringEmptyConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\ListConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\MultipleValuesConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\NewItemTypesComboBoxConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\ObjectToUIElementConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\PropertyItemEditorConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\PropertyNameTextTrimmingConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Converters\SelectedObjectConverter.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Collections\CategoryDefinitionCollection.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Collections\DefinitionCollectionBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Collections\EditorDefinitionCollection.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Collections\PropertyDefinitionBaseCollection.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Collections\PropertyDefinitionCollection.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\DescriptorPropertys\CommonDescriptorPropertyDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\DescriptorPropertys\DescriptorPropertyDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\DescriptorPropertys\DescriptorPropertyDefinitionBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\CategoryDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\DefinitionBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorBoundDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorCheckBoxDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorCollectionDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorComboBoxDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorDateTimeUpDownDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorDefinitionBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorFilePickerDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorNumerInputDefinitionBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorPrimitiveTypeCollectionDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorTemplateDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorTextDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\EditorUpDownDefinitionBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\PropertyDefinition.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Definitions\Editors\PropertyDefinitionBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EditorOptions.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\CheckBoxEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\CollectionEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\ColorEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\ComboBoxEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\DateTimeUpDownEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\EnumCheckComboBoxEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\EnumComboBoxEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\FileEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\FontComboBoxEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\ItemsSourceAttributeEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\NumberInputEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\PasswordEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\PrimitiveTypeCollectionEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\ReadOnlyTextEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\SourceComboBoxEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\TextBlockEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\TextBoxEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\TimeSpanUpDownEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\TypeEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Editors\UpDownEditor.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EditorTypeCode.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EventArgs\CategoryEventArgs.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EventArgs\IsPropertyBrowsableArgs.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EventArgs\IsPropertyExpandableArgs.cs" />
+		<Compile Include="Windows\EventArgs\ItemAddingEventArgs.cs" />
+		<Compile Include="Windows\EventArgs\ItemDeletingEventArgs.cs" />
+		<Compile Include="Windows\EventArgs\ItemEventArgs.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EventArgs\PropertyArgs.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EventArgs\PropertyItemEventArgs.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\EventArgs\PropertyValueChangedEventArgs.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\FilterInfo.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\IPropertyContainer.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertiesCollectionView.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyConstraint.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyGrid.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyGridTarget.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyGridUtilities.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyItems\CustomPropertyItem.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyItems\ListPropertyItem.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyItems\PropertyItem.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyItems\PropertyItemBase.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyItems\PropertyItemCollection.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyLogicHelper.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\PropertyResolver.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Rules\CommonPropertyExceptionValidationRule.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\Selectors\CategoryGroupStyleSelector.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\StringConstants.cs" />
+		<Compile Include="Windows\Controls\PropertyGrid\TargetPropertyType.cs" />
+		<Compile Include="Windows\Controls\Spinner\ButtonSpinner.cs" />
+		<Compile Include="Windows\Controls\Spinner\SpinDirection.cs" />
+		<Compile Include="Windows\Controls\Spinner\SpinEventArgs.cs" />
+		<Compile Include="Windows\Controls\Spinner\Spinner.cs" />
+		<Compile Include="Windows\Controls\Spinner\ValidSpinDirections.cs" />
+		<Compile Include="Windows\Shapes\Arc.cs" />
+		<Compile Include="Windows\Shapes\Diamond.cs" />
+		<Compile Include="Windows\Theme\ResourceHelper.cs" />
+		<Compile Include="Windows\Theme\Spelling.cs" />
+		<Compile Include="Windows\Theme\StyleManager.cs" />
+		<Compile Include="Windows\Theme\Themes.cs" />
+		<Compile Include="Windows\WeakCollectionChangedWrapper.cs" />
+		<Compile Include="Windows\WeakEventListener.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Windows\Controls\PropertyGrid\PropertyGrid.Icon.bmp" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Resource Include="Assets\Images\CollectionControl\delete16.png" />
+		<Resource Include="Assets\Images\CollectionControl\delete16_white.png" />
+		<Resource Include="Assets\Images\CollectionControl\duplicate.png" />
+		<Resource Include="Assets\Images\CollectionControl\duplicate_white.png" />
+		<Resource Include="Assets\Images\PropertyGrid\advancedproperties11.png" />
+		<Resource Include="Assets\Images\PropertyGrid\categorize16.png" />
+		<Resource Include="Assets\Images\PropertyGrid\clearfilter16.png" />
+		<Resource Include="Assets\Images\PropertyGrid\clearfilter16_green.png" />
+		<Resource Include="Assets\Images\PropertyGrid\clearfilter16_white.png" />
+		<Resource Include="Assets\Images\PropertyGrid\database11.png" />
+		<Resource Include="Assets\Images\PropertyGrid\inheritance11.png" />
+		<Resource Include="Assets\Images\PropertyGrid\local11.png" />
+		<Resource Include="Assets\Images\PropertyGrid\resource11.png" />
+		<Resource Include="Assets\Images\PropertyGrid\sortascending16.png" />
+		<Resource Include="Assets\Images\PropertyGrid\sortascending16_white.png" />
+		<Resource Include="Assets\Images\PropertyGrid\style11.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="HandyControl" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\BgCommon.Localization\BgCommon.Localization.csproj" />
+		<ProjectReference Include="..\BgCommon\BgCommon.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Resource Include="Assets\Fonts\demo.css" />
+		<Resource Include="Assets\Fonts\demo_index.html" />
+		<Resource Include="Assets\Fonts\iconfont.css" />
+		<Resource Include="Assets\Fonts\iconfont.js" />
+		<Resource Include="Assets\Fonts\iconfont.json" />
+		<Resource Include="Assets\Fonts\iconfont.svg" />
+		<Resource Include="Assets\Fonts\iconfont.ttf" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="BgControls.targets">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Iconfont.tt">
+			<Generator>TextTemplatingFileGenerator</Generator>
+			<LastGenOutput>Iconfont.generated.cs</LastGenOutput>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="Iconfont.generated.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Iconfont.tt</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Folder Include="Assets\Images\ButtonSpinner\" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Page Include="Windows\Controls\CollectionControl\CollectionControlDialog.xaml" />
+		<Page Include="Windows\Controls\Input\NumbericKeypad.xaml" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Page Update="Assets\Style\Theme.xaml">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</Page>
+	</ItemGroup>
+</Project>

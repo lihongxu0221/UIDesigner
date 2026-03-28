@@ -1,0 +1,84 @@
+using System.Windows;
+using BgControls.Windows.Datas;
+
+namespace BgControls.Windows.Attach;
+
+/// <summary>
+/// 状态切换元素附加属性类.
+/// </summary>
+/// <remarks>
+/// <para>
+/// 此类提供了一组附加属性，主要用于 <see cref="ToggleButton"/> (及其派生类如 CheckBox, RadioButton).
+/// </para>
+/// <para>
+/// 它允许控件在不同的状态 (Checked/Unchecked) 下显示不同的内容元素.
+/// 例如：在 Switch 按钮中，选中时显示 "ON" 图标，未选中时显示 "OFF" 图标.
+/// </para>
+/// </remarks>
+public class StatusSwitchElement
+{
+    /// <summary>
+    /// 标识 CheckedElement 附加属性.
+    /// </summary>
+    /// <remarks>
+    /// 获取或设置当控件处于选中 (Checked) 状态时应当显示的元素或内容.
+    /// </remarks>
+    public static readonly DependencyProperty CheckedElementProperty =
+        DependencyProperty.RegisterAttached(
+            "CheckedElement",
+            typeof(object),
+            typeof(StatusSwitchElement),
+            new PropertyMetadata(default(object)));
+
+    /// <summary>
+    /// 标识 HideUncheckedElement 附加属性.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// 获取或设置一个值，该值指示当显示 <see cref="CheckedElementProperty"/> (即选中状态) 时，
+    /// 是否隐藏控件原本的内容 (即未选中状态下的 Content).
+    /// </para>
+    /// <para>
+    /// 如果为 <c>true</c>，选中时会隐藏原始 Content；
+    /// 如果为 <c>false</c>，选中时 <see cref="CheckedElementProperty"/> 可能会覆盖在原始 Content 上 (取决于模板实现).
+    /// </para>
+    /// </remarks>
+    public static readonly DependencyProperty HideUncheckedElementProperty =
+        DependencyProperty.RegisterAttached(
+            "HideUncheckedElement",
+            typeof(bool),
+            typeof(StatusSwitchElement),
+            new PropertyMetadata(ValueBoxes.FalseBox));
+
+    /// <summary>
+    /// 设置指定元素的选中状态显示内容.
+    /// </summary>
+    /// <param name="element">要设置属性的依赖对象.</param>
+    /// <param name="value">选中时要显示的对象 (UIElement, String 等).</param>
+    public static void SetCheckedElement(DependencyObject element, object value) =>
+        element.SetValue(CheckedElementProperty, value);
+
+    /// <summary>
+    /// 获取指定元素的选中状态显示内容.
+    /// </summary>
+    /// <param name="element">要获取属性的依赖对象.</param>
+    /// <returns>选中时显示的对象.</returns>
+    public static object GetCheckedElement(DependencyObject element) =>
+        element.GetValue(CheckedElementProperty);
+
+    /// <summary>
+    /// 设置指定元素在选中时是否隐藏原始内容.
+    /// </summary>
+    /// <param name="element">要设置属性的依赖对象.</param>
+    /// <param name="value">是否隐藏.</param>
+    public static void SetHideUncheckedElement(DependencyObject element, bool value) =>
+        element.SetValue(HideUncheckedElementProperty, ValueBoxes.BooleanBox(value));
+
+    /// <summary>
+    /// 获取指定元素在选中时是否隐藏原始内容.
+    /// </summary>
+    /// <param name="element">要获取属性的依赖对象.</param>
+    /// <returns>是否隐藏.</returns>
+    public static bool GetHideUncheckedElement(DependencyObject element) =>
+        (bool)element.GetValue(HideUncheckedElementProperty);
+}
