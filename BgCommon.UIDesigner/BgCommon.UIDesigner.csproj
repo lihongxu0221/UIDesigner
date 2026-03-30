@@ -11,12 +11,12 @@
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   
-  <ItemGroup>
+  <!--<ItemGroup>
     <ProjectReference Include="..\BgCommon.Localization\BgCommon.Localization.csproj" />
     <ProjectReference Include="..\BgCommon\BgCommon.csproj" />
     <ProjectReference Include="..\BgLogger\BgLogger.csproj" />
     <ProjectReference Include="..\BgControls\BgControls.csproj" />
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
     <PackageReference Include="Costura.Fody" PrivateAssets="All"/>
