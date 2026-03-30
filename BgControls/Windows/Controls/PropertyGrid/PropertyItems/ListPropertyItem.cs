@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Controls.PropertyGrid;public class ListPropertyItem : PropertyItemBase{    /// <summary>    /// Initializes a new instance of the <see cref="ListPropertyItem"/> class.    /// </summary>    internal ListPropertyItem()    {    }}

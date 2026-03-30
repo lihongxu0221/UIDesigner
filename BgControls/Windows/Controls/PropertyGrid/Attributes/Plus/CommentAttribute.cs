@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Controls.PropertyGrid.Attributes;/// <summary>/// Specifies that the value is a comment./// </summary>[AttributeUsage(AttributeTargets.Property)]public class CommentAttribute : Attribute{}

@@ -1,1 +1,0 @@
-namespace Standard;internal struct RTL_OSVERSIONINFOW{    public uint DwOSVersionInfoSize;    public uint DwMajorVersion;    public uint DwMinorVersion;    public uint DwBuildNumber;    public uint DwPlatformId;    [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]    public string SzCSDVersion;}

@@ -1,8 +1,0 @@
-namespace BgControls.Windows.Datas;
-
-public enum LinearLayout
-{
-    Stack,
-
-    Uniform
-}

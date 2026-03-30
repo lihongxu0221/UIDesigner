@@ -1,1 +1,0 @@
-namespace BgControls.Windows.DragDrop;/// <summary>/// 指定触发触摸拖拽操作的手势类型./// </summary>public enum TouchDragTrigger{    /// <summary>    /// 当手指按下（接触屏幕）时立即触发拖拽操作.    /// </summary>    TapDown,    /// <summary>    /// 当手指按下并保持一段时间（长按手势）后触发拖拽操作.    /// </summary>    TapAndHold,}

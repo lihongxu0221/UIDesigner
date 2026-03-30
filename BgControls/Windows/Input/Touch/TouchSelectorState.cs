@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Input.Touch;/// <summary>/// 定义触控选择器的状态枚举./// </summary>public enum TouchSelectorState{    /// <summary>    /// 隐藏状态.    /// </summary>    Hidden,    /// <summary>    /// 普通状态.    /// </summary>    Normal,    /// <summary>    /// 居中显示状态.    /// </summary>    Center,}

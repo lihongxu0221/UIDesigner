@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Controls;/// <summary>/// 旋转方向./// </summary>public enum SpinDirection{    /// <summary>    /// 增加.    /// </summary>    Increase = 0,    /// <summary>    /// 减少.    /// </summary>    Decrease = 1,}

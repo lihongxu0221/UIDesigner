@@ -1,1 +1,0 @@
-namespace BgControls.Windows;public class ItemEventArgs : RoutedEventArgs{    internal ItemEventArgs(RoutedEvent routedEvent, object newItem)        : base(routedEvent)    {        this.Item = newItem;    }    /// <summary>    /// Gets the added/deleted item.    /// /summary>    public object Item { get; }}

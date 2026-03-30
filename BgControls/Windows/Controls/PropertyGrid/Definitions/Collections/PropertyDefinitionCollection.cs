@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Controls.PropertyGrid;public class PropertyDefinitionCollection : PropertyDefinitionBaseCollection<PropertyDefinition>{}

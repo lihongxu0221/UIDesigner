@@ -1,6 +1,0 @@
-<Project>
-  <ItemGroup>
-    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)BgCommon.dll" />
-    <ReferenceCopyLocalPaths Include="$(MSBuildThisFileDirectory)BgCommon.Localization.dll" />
-  </ItemGroup>
-</Project>

@@ -1,9 +1,0 @@
-namespace BgControls.Windows.Controls.PropertyGrid.Attributes;
-
-/// <summary>
-/// Specifies that the property is a directory path.
-/// </summary>
-[AttributeUsage(AttributeTargets.Property)]
-public class DirectoryPathAttribute : Attribute
-{
-}

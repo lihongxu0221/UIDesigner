@@ -1,1 +1,0 @@
-namespace Microsoft.Expression.Interactions;[AttributeUsage(AttributeTargets.Class, Inherited = false)]public sealed class TypeConstraintAttribute : Attribute{    private readonly Type type;    public Type Constraint => type;    public TypeConstraintAttribute(Type constraint)    {        type = constraint;    }}

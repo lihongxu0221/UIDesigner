@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Input.Touch;/// <summary>/// 定义手势操作的状态枚举./// </summary>internal enum GestureState{    /// <summary>    /// 手势从未开始或处于初始状态.    /// </summary>    NeverStarted,    /// <summary>    /// 手势当前正在进行中.    /// </summary>    Active,    /// <summary>    /// 手势已完成或已正常结束.    /// </summary>    Finished}

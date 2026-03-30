@@ -1,1 +1,0 @@
-namespace Microsoft.Expression.Interactions;public enum FluidMoveScope{    Self,    Children}

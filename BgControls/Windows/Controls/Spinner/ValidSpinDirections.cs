@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Controls;/// <summary>/// 有效的旋转方向./// </summary>[Flags]public enum ValidSpinDirections{    /// <summary>    /// 无.    /// </summary>    None = 0,    /// <summary>    /// 增加.    /// </summary>    Increase = 1,    /// <summary>    /// 减少.    /// </summary>    Decrease = 2,}

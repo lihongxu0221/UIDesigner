@@ -1,1 +1,0 @@
-namespace BgControls.Windows.Input;/// <summary>/// 定义输入验证的接口./// </summary>public interface IValidateInput{    /// <summary>    /// 当出现输入验证错误时引发.    /// </summary>    event InputValidationErrorEventHandler InputValidationError;    /// <summary>    /// 提交输入.    /// </summary>    /// <returns>如果提交成功则返回 true，否则返回 false.</returns>    bool CommitInput();}
